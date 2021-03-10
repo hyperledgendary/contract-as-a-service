@@ -33,10 +33,12 @@ ansible-galaxy collection install ibm.blockchain_platform community.kubernetes m
 
 Finally run `pipenv shell` to get into a shell that has the required python configuration.
 
-###
-Nodejs
+### Additional tools
 
-ibmcloud cli, with cr plugins and k8s
+- Nodejs (version 12+) 
+- ibmcloud cli, with cr plugins, and kubectl can be useful but not essential
+- Docker for building the container
+- There are a couple of NodeJS utilities needed (....)
 
 
 ## API Keys
