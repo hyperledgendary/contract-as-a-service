@@ -1,0 +1,16 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+#api_endpoint: https://7a4c145275724d578006510f0c152dfc-ibpconsole-console.uks02.blockchain.cloud.ibm.com
+api_authtype: ibmcloud
+api_secret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ca_admin_enrollment_id: admin
+ca_admin_enrollment_secret: adminpw
+organization_admin_enrollment_id: orderingorgadmin
+organization_admin_enrollment_secret: orderingorgadminpw
+ordering_service_enrollment_id: orderingorgorderer
+ordering_service_enrollment_secret: orderingorgordererpw
+ordering_service_msp: CAASOrdererMSP
+ordering_service_nodes: 1
+wait_timeout: 600

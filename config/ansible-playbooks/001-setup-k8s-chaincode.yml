@@ -1,0 +1,163 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+- name: Setup k8s resources for chaincode
+  hosts: localhost
+  vars_files:
+    - common-vars.yml
+    - org1-vars.yml
+  tasks:
+    - name: Setup the namepsace
+      community.kubernetes.k8s:
+        name: caasdemo
+        api_version: v1
+        kind: Namespace
+        state: present
+
+    - name: Create a Service object from an inline definition
+      community.kubernetes.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            namespace: caasdemo
+            name: nodecc
+            labels:
+              app: caasdemo
+          spec:
+            ports:
+            - name: chaincode
+              port: 9999
+              targetPort: 9999
+              protocol: TCP
+            selector:
+              app: caasdemo
+      register: result
+
+    
+    - copy:
+        content: "{{ result.result.spec | moreati.jq.jq('{address: \"nodecc.caasdemo:9999\",dial_timeout:\"10s\",tls_required:false}') }}"
+        dest: ./connection.json
+    - name: Create the archive
+      command: ../pkgcc.sh -l nodecontract -t external connection.json
+
+
+- name: Install and approve chaincode
+  hosts: localhost
+  vars: 
+    smart_contract_package: caasdemo.tgz
+  vars_files:
+    - common-vars.yml
+    - org1-vars.yml
+  tasks:
+    - name: Install the chaincode on the peer
+      ibm.blockchain_platform.installed_chaincode:
+        api_endpoint: "{{ api_endpoint }}"
+        api_authtype: "{{ api_authtype }}"
+        api_key: "{{ api_key }}"
+        api_secret: "{{ api_secret | default(omit) }}"
+        api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
+        peer: "{{ org1_peer_name }}"
+        identity: "{{ org1_name }} Admin.json"
+        msp_id: "{{ org1_msp_id }}"
+        path: "{{ smart_contract_package }}"
+      register: installcc_result
+
+    - name: Approve the chaincode on the channel
+      ibm.blockchain_platform.approved_chaincode:
+        api_endpoint: "{{ api_endpoint }}"
+        api_authtype: "{{ api_authtype }}"
+        api_key: "{{ api_key }}"
+        api_secret: "{{ api_secret | default(omit) }}"
+        api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
+        peer: "{{ org1_peer_name }}"
+        identity: "{{ org1_name }} Admin.json"
+        msp_id: "{{ org1_msp_id }}"
+        channel: "{{ channel_name }}"
+        name: "{{ smart_contract_name }}"
+        version: "{{ smart_contract_version }}"
+        package_id: "{{ installcc_result.installed_chaincode.package_id }}"
+        sequence: "{{ smart_contract_sequence }}"
+        endorsement_policy: "{{ smart_contract_endorsement_policy | default(omit) }}"
+        collections_config: "{{ smart_contract_collections_file | default(omit) }}"
+
+    - name: Commit the chaincode on the channel
+      ibm.blockchain_platform.committed_chaincode:
+        api_endpoint: "{{ api_endpoint }}"
+        api_authtype: "{{ api_authtype }}"
+        api_key: "{{ api_key }}"
+        api_secret: "{{ api_secret | default(omit) }}"
+        api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
+        peer: "{{ org1_peer_name }}"
+        identity: "{{ org1_name }} Admin.json"
+        msp_id: "{{ org1_msp_id }}"
+        channel: "{{ channel_name }}"
+        organizations:
+          - "{{ org1_name }}"
+        name: "{{ smart_contract_name }}"
+        version: "{{ smart_contract_version }}"
+        sequence: "{{ smart_contract_sequence }}"
+        endorsement_policy: "{{ smart_contract_endorsement_policy | default(omit) }}"
+        collections_config: "{{ smart_contract_collections_file | default(omit) }}"      
+    
+    - name: Create a ConfigMap for the chaincode configuration
+      community.kubernetes.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: nodecc.v5.conf
+            namespace: caasdemo
+            labels:
+              app:  caasdemo
+          data:
+            CHAINCODE_SERVER_ADDRESS: 0.0.0.0:9999
+            CHAINCODE_ID: "{{ installcc_result.installed_chaincode.package_id }}"
+
+    - name: Create a ConfigMap for the chaincode configuration
+      community.kubernetes.k8s:
+        state: present
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            namespace: caasdemo
+            name: caasdemo
+            labels:
+              app: caasdemo
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: caasdemo
+            template:
+              metadata:
+                labels:
+                  app: caasdemo
+              spec:
+                containers:
+                  - name: nodecc
+                    image: stg.icr.io/ibp_demo/caasdemo-node          
+                    resources:
+                      requests:
+                        memory: "50Mi"
+                        cpu: "0.1"
+                    ports:
+                    - containerPort: 9999
+                    envFrom:
+                      - configMapRef:
+                          name: nodecc.v5.conf
+                imagePullSecrets:
+                  - name: pullimg-secret        
+
+
+
+    # - name: Write env file  
+    #   copy:
+    #     dest: chaincode.env
+    #     content: | 
+    #       CHAINCODE_SERVER_ADDRESS=nodecc.caasdemo:{{ result.result.spec.ports[0].nodePort }}
+    #       CHAINCODE_ID=nodecc:{{ installcc_result.installed_chaincode.package_id }}

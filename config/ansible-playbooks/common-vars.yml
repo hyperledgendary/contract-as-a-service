@@ -1,0 +1,15 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+# These vars are used in more than one file,
+# i.e. needed by multiple orgs so can't just live in a per org file
+ordering_org_name: "CAAS Ordering Org"
+ordering_service_name: "CAAS Ordering Service"
+org1_name: "CAASOrg1"
+org1_msp_id: CAASOrg1MSP
+org2_name: "Org2"
+org2_msp_id: Org2MSP
+ca_version: "1.4.9-5"
+peer_version: "2.2.2-1"
+ordering_service_version: "2.2.2-1"

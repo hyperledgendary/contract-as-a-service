@@ -1,0 +1,1 @@
+ ansible-playbook ./ansible/oneorg-v2x/000-delete-oneorg.yml --extra-vars api_key=${IBP_KEY} --extra-vars api_endpoint=${IBP_ENDPOINT} --extra-vars api_token_endpoint=${API_TOKEN_ENDPOINT}

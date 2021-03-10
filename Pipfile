@@ -1,0 +1,16 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fabric-sdk-py = "*"
+openshift = "==0.11.2"
+semantic-version = "*"
+jq = "*"
+ansible = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.8"

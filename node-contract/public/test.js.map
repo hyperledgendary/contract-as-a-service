@@ -1,0 +1,1 @@
+{"version":3,"file":"test.js","sources":["../test.js"],"sourcesContent":["const chalk = require('chalk')\n\nconsole.log(chalk.blue('hello'));\n"],"names":[],"mappings":";;AAAA,MAAM,KAAK,GAAG,OAAO,CAAC,OAAO,EAAC;AAC9B;AACA,OAAO,CAAC,GAAG,CAAC,KAAK,CAAC,IAAI,CAAC,OAAO,CAAC,CAAC;;"}

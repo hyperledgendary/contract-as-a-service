@@ -1,0 +1,21 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+api_endpoint: https://39e0958e1d3d45c3891c4f24226b5a85-ibpconsole-console.so01.blockchain.test.cloud.ibm.com
+api_authtype: ibmcloud
+
+api_secret: K4Qkze4J_2oUdiQB7NlK24gk_9qcbtLgHfMjT4iCkKxk
+ca_admin_enrollment_id: admin
+ca_admin_enrollment_secret: adminpw
+organization_admin_enrollment_id: org1admin
+organization_admin_enrollment_secret: org1adminpw
+peer_enrollment_id: org1peer
+peer_enrollment_secret: org1peerpw
+application_enrollment_id: org1app
+application_enrollment_secret: org1apppw
+application_enrollment_type: client
+application_max_enrollments: 10
+org1_ca_name: "CAAS Org1 CA"
+org1_peer_name: CAAS "Org1 Peer"
+wait_timeout: 600

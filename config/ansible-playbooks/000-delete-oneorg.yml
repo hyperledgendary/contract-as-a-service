@@ -1,0 +1,26 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+- name: Delete components for an endorsing organization
+  hosts: localhost
+  vars:
+    state: absent
+    organization_name: "{{ org1_name }}"
+    ca_name: "{{ org1_ca_name }}"
+    peer_name: "{{ org1_peer_name }}"
+  vars_files:
+    - common-vars.yml
+    - org1-vars.yml
+  roles:
+    - ibm.blockchain_platform.endorsing_organization
+- name: Delete components for an ordering organization
+  hosts: localhost
+  vars:
+    state: absent
+    organization_name: "{{ ordering_org_name }}"
+  vars_files:
+    - common-vars.yml
+    - ordering-org-vars.yml
+  roles:
+    - ibm.blockchain_platform.ordering_organization    
