@@ -151,13 +151,4 @@
                       - configMapRef:
                           name: nodecc.v5.conf
                 imagePullSecrets:
-                  - name: pullimg-secret        
-
-
-
-    # - name: Write env file  
-    #   copy:
-    #     dest: chaincode.env
-    #     content: | 
-    #       CHAINCODE_SERVER_ADDRESS=nodecc.caasdemo:{{ result.result.spec.ports[0].nodePort }}
-    #       CHAINCODE_ID=nodecc:{{ installcc_result.installed_chaincode.package_id }}
+                  - name: pullimg-secret

@@ -5,7 +5,7 @@
 api_endpoint: https://39e0958e1d3d45c3891c4f24226b5a85-ibpconsole-console.so01.blockchain.test.cloud.ibm.com
 api_authtype: ibmcloud
 
-api_secret: K4Qkze4J_2oUdiQB7NlK24gk_9qcbtLgHfMjT4iCkKxk
+#api_secret: xxx
 ca_admin_enrollment_id: admin
 ca_admin_enrollment_secret: adminpw
 organization_admin_enrollment_id: org1admin
