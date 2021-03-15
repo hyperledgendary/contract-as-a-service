@@ -20,9 +20,9 @@
   collections:
    - ibm.cloudcollection
   vars_files:
-    - common-vars.yml
-    - org1-vars.yml
-    - ibmcloud-vars.yml
+    - ../config/ibp-vars.yml
+    - ../config/ibp-org1-vars.yml
+    - ../config/ibmcloud-vars.yml
   tasks:
     - name: Create Service ID
       ibm_iam_service_id:
@@ -33,6 +33,10 @@
         ibmcloud_api_key: "{{ cloud_api_key }}"
       register: idinfo
 
+    - name: Debug
+      ansible.builtin.debug:
+        msg: "{{ idinfo }}"
+    
     # Based on if the service_id already exists or not, the return value is different
     # The difference between the 'id' and the 'iam_id' is that 'iam_id' has the prefix 'iam-'
     - name: Process API key - if the service id has not been created
@@ -46,6 +50,10 @@
         iam_service_id: '{{ idinfo.resource.id }}'
         iam_service_iamid: '{{ idinfo.resource.iam_id }}'
       when: idinfo.changed
+
+    - name: Debug
+      ansible.builtin.debug:
+        msg: "{{ iam_service_id }}    {{iam_service_iamid}}"
 
     - name: Create Service Policy
       ibm_iam_service_policy:
@@ -65,10 +73,17 @@
         name: "{{ key_name }}"
         iam_service_id: "{{ iam_service_iamid }}"  # this needs to have the prefix variant
       register: apikey
+    - name: Debug
+      ansible.builtin.debug:
+        msg: "{{apikey }}"
 
     - name: Extract the API key
       set_fact:
           image_registry_password: '{{ apikey.resource.apikey }}'
+
+    - name: Debug
+      ansible.builtin.debug:
+        msg: "{{ image_registry_password }}"
 
     - name: Create the DockerRegistry secret
       community.kubernetes.k8s:

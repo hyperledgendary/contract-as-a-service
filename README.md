@@ -13,11 +13,10 @@ Objectives
 
 ## Prereqs
 
-Access to IBP, and an IBM Console instance created - this can all be done in the free cluster option. Will last 28 days, but is perfectly sufficient for this.
+Access to IBP, and free K8S Cluster created. Will last 28 days, but is perfectly sufficient for this. You should also install the Blockchain Platform into the cluster.
 
 ### Suitable Python environment
-
-Ansible is written in Python; and getting python setup can be time consuming and awkward. The easiest way that I've found to do this succesfully - and most importantly *repeatdly succesful* is using pipenv
+Ansible is a main feature of this setup, and as Ansible is written in Python getting a Python environment is essential.  Experience has shown getting python setup can be time consuming and awkward. The easiest way that I've found to do this succesfully - and most importantly *repeatdly succesful* is using pipenv
 
 I'll use this seqeuence of commands to get started here
 
@@ -26,8 +25,7 @@ pipenv --python 3.8
 pipenv install fabric-sdk-py 
 pipenv install 'openshift==0.11.2'
 pipenv install jq
-
-ansible-galaxy collection install ibm.blockchain_platform community.kubernetes moreati.jq
+ansible-galaxy collection install ibm.blockchain_platform community.kubernetes moreati.jq ibmcloud.collection
 # add --force to get upgrade to new versions of these collections
 ```
 
@@ -35,28 +33,56 @@ Finally run `pipenv shell` to get into a shell that has the required python conf
 
 ### Additional tools
 
-- Nodejs (version 12+) 
-- ibmcloud cli, with cr plugins, and kubectl can be useful but not essential
-- Docker for building the container
-- There are a couple of NodeJS utilities needed (....)
+- Nodejs (version 12+). Suggested you use `nvm` for this
+- [IBMCloud CLI](https://cloud.ibm.com/docs/cli?topic=cli-getting-started)
+- You should also install the Container Registry and Kubernetes Service [plugins](https://cloud.ibm.com/docs/cli?topic=cli-install-devtools-manually)
+- Docker for building the containers
+- There are a couple of NodeJS utilities needed (will install those as needed below)
+
+### Hyperledger Fabric Peer Commands
+You'll need to have a copy of the Fabric Peer Commands. To help there's a script `getPeer.sh` that can get them for you.
+
+```bash
+getPeer.sh
+peer version
+
+# output. need to have 2.2.1 or later
+peer:
+ Version: 2.2.1
+ Commit SHA: 344fda602
+ Go version: go1.14.4
+ OS/Arch: linux/amd64
+ Chaincode:
+  Base Docker Label: org.hyperledger.fabric
+  Docker Namespace: hyperledger
+```
+
 
 
 ## API Keys
-Will need service credentials for the IBP Console
+There are 2 API keys you need:
+
+IBP Console service credentials.  These can be [created from the web ui](https://test.cloud.ibm.com/docs/account?topic=account-service_credentials)
+IBM Cloud API key. Create a [User API Key](https://test.cloud.ibm.com/docs/account?topic=account-userapikey#manage-user-keys)
+
+
+Create a `.env` file that contains something like this.
 
 ```
 # .env file 
-
+CLOUD_API_KEY=a8aUjPRMrIgLhQXGWcl9tR_FxtdQvjQtmPXnKrFHQIK5
+IBP_KEY=xxxxxxxxxxxxxxxxxxxx
+IBP_ENDPOINT=https://xxxxxxxxxxxxxxxxxxxxxxxxx-ibpconsole-console.so01.blockchain.test.cloud.ibm.com
 ```
+
+Then set these as environment variables.
 
 ```bash
 export $(grep -v '^#' .env | xargs)
 ```
 
 ## Node.js Smart Contract
-
 The contract in this example is simple, but it's here just to demonstrate how it can be deployed. It's the basic getting started contract found in the Fabric Docs and the IBP VSCode exentions.
-
 The key thing is the dockerfile that is also part of the contract, and some minor changes to the package.json
 
 ### Chaincode-as-a-server

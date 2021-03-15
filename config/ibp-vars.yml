@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
-# These vars are used in more than one file,
+# These are variables used by IBP in different orgs
 # i.e. needed by multiple orgs so can't just live in a per org file
 ordering_org_name: "CAAS Ordering Org"
 ordering_service_name: "CAAS Ordering Service"
@@ -13,3 +13,4 @@ org2_msp_id: Org2MSP
 ca_version: "1.4.9-5"
 peer_version: "2.2.2-1"
 ordering_service_version: "2.2.2-1"
+channel_name: caasnetwork2

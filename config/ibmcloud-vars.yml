@@ -3,8 +3,8 @@
 #
 ---
 # K8S Variables
-namespace: 'caasdemo'# i.e. needed by multiple orgs so can't just live in a per org file
-image_pull_secret: 'pullimg-secret'
+namespace: 'caasdemo' # i.e. needed by multiple orgs so can't just live in a per org file
+image_pull_secret: 'pullimg-secret-ansible'
 image_registry: stg.icr.io 
 
 
