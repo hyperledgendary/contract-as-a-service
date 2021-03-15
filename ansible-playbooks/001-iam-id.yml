@@ -32,10 +32,6 @@
         state: "available"
         ibmcloud_api_key: "{{ cloud_api_key }}"
       register: idinfo
-
-    - name: Debug
-      ansible.builtin.debug:
-        msg: "{{ idinfo }}"
     
     # Based on if the service_id already exists or not, the return value is different
     # The difference between the 'id' and the 'iam_id' is that 'iam_id' has the prefix 'iam-'
@@ -55,15 +51,30 @@
       ansible.builtin.debug:
         msg: "{{ iam_service_id }}    {{iam_service_iamid}}"
 
+    # - name: Create Service Policy
+    #   command: ibmcloud iam service-policy-create {{ iam_service_id }} --roles Reader --service-name container-registry
+
     - name: Create Service Policy
       ibm_iam_service_policy:
         roles: Reader
         state: "available"
         region: "{{ region }}"
-        iam_service_id: "{{ iam_service_id }}"  # this needs to have the non-prefix variant
+        iam_service_id: "{{ iam_service_id }}"  
         ibmcloud_api_key: "{{ cloud_api_key }}"
         resources:
           - service: "container-registry"
+      register: policy
+
+    - name: Debug
+      ansible.builtin.debug:
+        msg: "{{ policy }} "
+
+    - name: Query the Policy
+      ibm_iam_service_policy_info:
+        region: "{{ region }}"
+        iam_service_id: "{{ iam_service_id }}"  
+        ibmcloud_api_key: "{{ cloud_api_key }}"
+      register: policy
 
     - name: Create the API key
       ibm_iam_service_api_key:
@@ -80,10 +91,6 @@
     - name: Extract the API key
       set_fact:
           image_registry_password: '{{ apikey.resource.apikey }}'
-
-    - name: Debug
-      ansible.builtin.debug:
-        msg: "{{ image_registry_password }}"
 
     - name: Create the DockerRegistry secret
       community.kubernetes.k8s:
