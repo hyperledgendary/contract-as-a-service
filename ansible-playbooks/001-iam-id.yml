@@ -52,22 +52,23 @@
         msg: "{{ iam_service_id }}    {{iam_service_iamid}}"
 
     # - name: Create Service Policy
-    #   command: ibmcloud iam service-policy-create {{ iam_service_id }} --roles Reader --service-name container-registry
+      # command: ibmcloud iam service-policy-create {{ iam_service_id }} --roles Reader --service-name container-registry
 
-    - name: Create Service Policy
-      ibm_iam_service_policy:
-        roles: Reader
-        state: "available"
-        region: "{{ region }}"
-        iam_service_id: "{{ iam_service_id }}"  
-        ibmcloud_api_key: "{{ cloud_api_key }}"
-        resources:
-          - service: "container-registry"
-      register: policy
+    # - name: Create Service Policy
+    #   ibm_iam_service_policy:
+    #     roles: 
+    #      - Reader
+    #     state: "available"
+    #     region: "{{ region }}"
+    #     iam_service_id: "{{ iam_service_id }}"  
+    #     ibmcloud_api_key: "{{ cloud_api_key }}"
+    #     resources:
+    #       - service: "container-registry"
+    #   register: policy
 
-    - name: Debug
-      ansible.builtin.debug:
-        msg: "{{ policy }} "
+    # - name: Debug
+    #   ansible.builtin.debug:
+    #     msg: "{{ policy }} "
 
     - name: Query the Policy
       ibm_iam_service_policy_info:

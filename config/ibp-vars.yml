@@ -10,7 +10,7 @@ org1_name: "CAASOrg1"
 org1_msp_id: CAASOrg1MSP
 org2_name: "Org2"
 org2_msp_id: Org2MSP
-ca_version: "1.4.9-5"
+ca_version: "1.4.9-6"
 peer_version: "2.2.2-1"
 ordering_service_version: "2.2.2-1"
 channel_name: caasnetwork2

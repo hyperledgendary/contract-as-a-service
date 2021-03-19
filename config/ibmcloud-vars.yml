@@ -10,7 +10,7 @@ image_registry: stg.icr.io
 
 # IBM Cloud configuration
 region: 'us-south'
-service_id: 'demo-caas-id-6'
+service_id: 'demo-caas-id-7'
 key_name: 'demo-caas-api-key'
 # cloud_api_key: api-key-for-ibm-cloud-is-needed-here
 

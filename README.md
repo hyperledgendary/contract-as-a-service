@@ -1,8 +1,10 @@
 # Running IBP with self-managed K8S Smart Contracts
 
-Aim of this is to show how with IBP 2.5.2, the Chaincode containers that run Smart Contracts can be run in a namespace of your own choosing in K8S. This is a new feature of IBP, and is made possible by the underlying Hyperledger Fabric - Extenal Chaincode and Chaincode-as-a-server features.
+*Aim* 
 
-Objectives
+To show how with IBP 2.5.2, the Chaincode containers that run Smart Contracts can be run in a namespace of your own choosing in K8S. This is a new feature of IBP, and is made possible by the underlying Hyperledger Fabric - Extenal Chaincode and Chaincode-as-a-server features.
+
+*Objectives*
 - Setup an Ansible based environment to use for configuration
 - Build a NodeJS Smart Contract in a Docker image & push the image to the repository
 - Using the IBP Ansible collection, provision a basic network of Peers and Orderers
@@ -11,9 +13,11 @@ Objectives
 - Deployment of the actual chaincode
 - Testing it!
 
-## Prereqs
+And using TLS between the peer and chaincode. [please note that this isn't yet working in this example]
 
-Access to IBP, and free K8S Cluster created. Will last 28 days, but is perfectly sufficient for this. You should also install the Blockchain Platform into the cluster.
+## Setup
+
+This tutorial will assume that you have installed IBP, with a free K8S Cluster created. The free cluser will last 28 days, but is perfectly sufficient for this. You can, of course, use another K8S environment if you have IBP installed there. 
 
 ### Suitable Python environment
 Ansible is a main feature of this setup, and as Ansible is written in Python getting a Python environment is essential.  Experience has shown getting python setup can be time consuming and awkward. The easiest way that I've found to do this succesfully - and most importantly *repeatdly succesful* is using pipenv
@@ -25,17 +29,34 @@ pipenv --python 3.8
 pipenv install fabric-sdk-py 
 pipenv install 'openshift==0.11.2'
 pipenv install jq
-ansible-galaxy collection install ibm.blockchain_platform community.kubernetes moreati.jq ibmcloud.collection
+ansible-galaxy collection install ibm.blockchain_platform community.kubernetes ibmcloud.collection
 # add --force to get upgrade to new versions of these collections
+# note used to use moreati.jq but believed not to be required
 ```
 
 Finally run `pipenv shell` to get into a shell that has the required python configuration.
 
+### Login into IBM Cloud
+
+If you don't have them already install the IBMCloud CLI, along with the plugins for the Container Registry and the Kubernetes Service
+
+- [IBMCloud CLI](https://cloud.ibm.com/docs/cli?topic=cli-getting-started)
+- You should also install the Container Registry and Kubernetes Service [plugins](https://cloud.ibm.com/docs/cli?topic=cli-install-devtools-manually)
+
+I would recommend logging in now to the cloud. If you go to the cluster overpage in the cloud, and click on "Actions..." and then "Connect via CLI" you will see a set of instructions. These will be something like this depending on the region your cluster is in.
+
+```bash
+ibmcloud login -a test.cloud.ibm.com -r us-south -g default
+ibmcloud ks cluster config --cluster avaluewillbehere
+ibmcloud cr login
+```
+
+You'll be able to use the `kubectl` command now, and the K8S Ansible tasks later will also work without needing a separate API key.
+
 ### Additional tools
 
 - Nodejs (version 12+). Suggested you use `nvm` for this
-- [IBMCloud CLI](https://cloud.ibm.com/docs/cli?topic=cli-getting-started)
-- You should also install the Container Registry and Kubernetes Service [plugins](https://cloud.ibm.com/docs/cli?topic=cli-install-devtools-manually)
+
 - Docker for building the containers
 - There are a couple of NodeJS utilities needed (will install those as needed below)
 
@@ -43,7 +64,12 @@ Finally run `pipenv shell` to get into a shell that has the required python conf
 You'll need to have a copy of the Fabric Peer Commands. To help there's a script `getPeer.sh` that can get them for you.
 
 ```bash
-getPeer.sh
+./scripts/getPeer.sh
+```
+
+This will output the environment variables you should set to ensure the tools are the path, and the `FABRIC_CFG_PATH` is set. Check the install is correct by checking the version of the peer.
+
+```bash
 peer version
 
 # output. need to have 2.2.1 or later
@@ -59,12 +85,11 @@ peer:
 
 
 
-## API Keys
+### API Keys
 There are 2 API keys you need:
 
-IBP Console service credentials.  These can be [created from the web ui](https://test.cloud.ibm.com/docs/account?topic=account-service_credentials)
-IBM Cloud API key. Create a [User API Key](https://test.cloud.ibm.com/docs/account?topic=account-userapikey#manage-user-keys)
-
+- IBP Console service credentials.  These can be [created from the web ui](https://cloud.ibm.com/docs/account?topic=account-service_credentials)
+- IBM Cloud API key. Create a [User API Key](https://cloud.ibm.com/docs/account?topic=account-userapikey#manage-user-keys)
 
 Create a `.env` file that contains something like this.
 
@@ -81,9 +106,22 @@ Then set these as environment variables.
 export $(grep -v '^#' .env | xargs)
 ```
 
+## QuickStart
+
+All the commands below have been put into a makefile that can be run as follows
+
+- `make nodecontract` builds and published the Docker image for the Node.js contract
+- `make javacontract` builds and published the Docker image for the Java contract
+- `make gocontract` builds and publised the Docker image for the Go contract (coming soon)
+- `make network` builds the network of Peers, Orderers and CAs
+- `make tls` creates the X509 certificates required to work with TLS between chaincode and peer
+- `make iamsetup` creates the secret key to pull from the container registry 
+- `make nodedeploy` Deploys the Node chaincode definition to the peer, and stands up the chaincode container in a separate k8s namespace from IBP
+- `make javadeploy` Deploys the Java chaincode definition to the peer, and stands up the chaincode container in a separate k8s namespace from IBP
+- `make identity` creates a application identity for client applications to use.
+
 ## Node.js Smart Contract
-The contract in this example is simple, but it's here just to demonstrate how it can be deployed. It's the basic getting started contract found in the Fabric Docs and the IBP VSCode exentions.
-The key thing is the dockerfile that is also part of the contract, and some minor changes to the package.json
+The contract in this example is simple, but it's here just to demonstrate how it can be deployed. It's the basic getting started contract found in the Fabric Docs and the IBP VSCode exentions. The key thing is the dockerfile that is used to package up the contract, and some minor changes to the package.json
 
 ### Chaincode-as-a-server
 'Normally' the Peers will start (directly or indirectly in the case of things like IBP) the chaincode processes running. In this case, when the chaincode starts it 'calls back' to the peer to 'register'.
@@ -94,19 +132,20 @@ Once this initial 'registration' is complete, logically there's no difference be
 
 The key is to add this to the package.json scripts section.
 
-```
- "start:server": "fabric-chaincode-node server --chaincode-address=$CHAINCODE_SERVER_ADDRESS --chaincode-id=$CHAINCODE_ID"
+```json
+ "start:server": "fabric-chaincode-node server --chaincode-address=$CHAINCODE_SERVER_ADDRESS --chaincode-id=$CHAINCODE_ID --chaincode-tls-key-file=/hyperledger/privatekey.pem --chaincode-tls-client-cacert-file=/hyperledger/rootcert.pem --chaincode-tls-cert-file=/hyperledger/cert.pem"
 ```
 
 I also like to add an `echo $CHAINCODE_SERVER_ADDRESS $CHAINCODE_ID && ` before the command `fabric-chaincode-node` command to get some debug.
-
 *Note* there are NO changes to the actual contract or libraries used.. it's just this command in the `package.json`
+
+The TLS settings are refering to files that will mounted into the chaincode when this is deployed into K8S. The actual locations are arbitrary so you may alter them if you wish. 
 
 ### Dockerfile 
 
 Firstly the dockerfile itself. This is a relatively simple node.js dockerfile, you've liberty here construct this as you wish. 
 
-```
+```docker
 FROM node:12.15-alpine
 
 WORKDIR /usr/src/app
@@ -126,34 +165,33 @@ CMD ["npm", "run", "start:server"]
 
 Note the PORT is being set as 9999, and the command that is being run. So long as that command is run - and a port is setup that's the key thing. The port can be of your own choosing, 9999 is used here.
 
-Secondly you need to build and push this to a registry. The registry that is being used in the container registry connected to the IBM K8S Cluster.
+Secondly you need to build and push this to a registry. The registry that I'm using is the container registry connected to the IBM K8S Cluster.
 
-```
+```bash 
 docker build -t caasdemo-node .
 docker tag caasdemo-node stg.icr.io/ibp_demo/caasdemo-node:latest
 ```
 
+Ensure you've logged into the container registry (`ibmcloud cr login`) and push the docker image
 
-```
-ibmcloud cr login
+```bash
 docker push  stg.icr.io/ibp_demo/caasdemo-node:latest
 ```
 
 ## Secret to pull the docker image
 
-Documentation is on line at, 
-https://cloud.ibm.com/docs/containers?topic=containers-registry#other_registry_accounts
+A K8S secret needs to be created with credentials of how to pull images from the Container Registry. Documentation is on line at, https://cloud.ibm.com/docs/containers?topic=containers-registry#other_registry_accounts of the sequence of commands that you need.
 
-
-The requried commands are in the `createIAMSecret.sh` script. This only needs to be run once.
+A Ansible playbook `ansible-playbooks/001-iam-id.yml` contains the required modules, bbut there's a defect in the IBM Terraform that's stopping this working at present (https://github.com/IBM-Cloud/terraform-provider-ibm/issues/2377). So do this via the cli commands in the above documentation link. They are summarised at the top of the playbook as well. 
 
 ## IBP Configuration
 
-The IBP Ansible collection is being used here - firstly the playbook to create the Peers/Orderes etc needs to be run.
+We need to create the Peers/Orderers and CAs etc. The `ansible-playbooks/000-create-network.yml` will create this for us. 
 
 As IBP Playbooks are concerned this is very standard, so I won't go into detail of how this works.
-```
-ansible-playbook ./config/ansible-playbooks/000-create-network.yml \
+
+```bash
+ansible-playbook ./ansible-playbooks/000-create-network.yml \
     --extra-vars api_key=${IBP_KEY} \
     --extra-vars api_endpoint=${IBP_ENDPOINT} \
     --extra-vars api_token_endpoint=${API_TOKEN_ENDPOINT} \
@@ -161,10 +199,10 @@ ansible-playbook ./config/ansible-playbooks/000-create-network.yml \
     --extra-vars home_dir=${DIR} 
 ```
 
-Then we need to setup the chaincode - this is different to usual so wil
+Then we need to setup the chaincode; this is where some of the 'magic' happens, so we'll go through it in more detail.
 
-```
-ansible-playbook ./config/ansible-playbooks/001-setup-k8s-chaincode.yml \
+```bash
+ansible-playbook ./ansible-playbooks/001-setup-k8s-chaincode.yml \
     --extra-vars api_key=${IBP_KEY} \
     --extra-vars api_endpoint=${IBP_ENDPOINT} \
     --extra-vars api_token_endpoint=${API_TOKEN_ENDPOINT} \
