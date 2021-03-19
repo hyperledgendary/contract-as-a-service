@@ -6,6 +6,7 @@
     - ../config/ibp-vars.yml
     - ../config/ibp-org1-vars.yml
   tasks:
+
     - name: Register a new identity
       ibm.blockchain_platform.registered_identity:
         api_endpoint: "{{ api_endpoint }}"
@@ -33,10 +34,10 @@
         enrollment_secret: "wibble"
         path: "{{ home_dir }}/_cfg/{{ name }}_tls.json"
         tls: true
-        hosts:
-          - nodecontract-srvc.caasdemo.svc.cluster.local
-          - nodecontract-srvc.caasdemo.svc.cluster
-          - nodecontract-srvc.caasdemo.svc
-          - nodecontract-srvc.caasdemo
-          - nodecontract-srvc
+        # hosts:
+        #   - nodecontract-srvc.caasdemo.svc.cluster.local
+        #   - nodecontract-srvc.caasdemo.svc.cluster
+        #   - nodecontract-srvc.caasdemo.svc
+        #   - nodecontract-srvc.caasdemo
+        #   - nodecontract-srvc
 

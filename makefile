@@ -32,7 +32,7 @@ nodedeploy:
 		--extra-vars api_token_endpoint=${API_TOKEN_ENDPOINT} \
 		--extra-vars smart_contract_name=nodecontract \
 		--extra-vars smart_contract_version=6 \
-		--extra-vars smart_contract_sequence=11 \
+		--extra-vars smart_contract_sequence=14 \
 		--extra-vars home_dir=${HOME_DIR} \
 		--extra-vars chaincode_docker_image=stg.icr.io/ibp_demo/caasdemo-node:latest
 
@@ -62,9 +62,8 @@ tls:
 		--extra-vars api_endpoint=${IBP_ENDPOINT} \
 		--extra-vars api_token_endpoint=${API_TOKEN_ENDPOINT} \
 		--extra-vars home_dir=${HOME_DIR} \
-		--extra-vars enroll_id=peer \
-		--extra-vars name=peer
-
+		--extra-vars enroll_id=org1peer \
+		--extra-vars name=org1peer
 	ansible-playbook ansible-playbooks/002-tls-setup-expr.yml \
 		--extra-vars api_key=${IBP_KEY} \
 		--extra-vars api_endpoint=${IBP_ENDPOINT} \
