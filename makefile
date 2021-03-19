@@ -32,7 +32,7 @@ nodedeploy:
 		--extra-vars api_token_endpoint=${API_TOKEN_ENDPOINT} \
 		--extra-vars smart_contract_name=nodecontract \
 		--extra-vars smart_contract_version=6 \
-		--extra-vars smart_contract_sequence=6 \
+		--extra-vars smart_contract_sequence=11 \
 		--extra-vars home_dir=${HOME_DIR} \
 		--extra-vars chaincode_docker_image=stg.icr.io/ibp_demo/caasdemo-node:latest
 
@@ -43,7 +43,7 @@ javadeploy:
 		--extra-vars api_token_endpoint=${API_TOKEN_ENDPOINT} \
 		--extra-vars smart_contract_name=javacontract \
 		--extra-vars smart_contract_version=2 \
-		--extra-vars smart_contract_sequence=2 \
+		--extra-vars smart_contract_sequence=3 \
 		--extra-vars home_dir=${HOME_DIR} \
 		--extra-vars chaincode_docker_image=stg.icr.io/ibp_demo/caasdemo-java:latest
 

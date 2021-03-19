@@ -10,7 +10,8 @@
     - ../config/ibmcloud-vars.yml
   vars:
     peer_tls: "{{lookup('file','peer_tls.json') | from_json }}"
-
+    chaincode_tls: "{{lookup('file','{{ home_dir }}/_cfg/{{ servicename }}.{{ namespace }}_tls.json') | from_json }}"
+    servicename: "{{ smart_contract_name}}-srvc"
   tasks:
     - name: Setup the namepsace
       community.kubernetes.k8s:
@@ -22,9 +23,9 @@
     - name: Set service name and the peer certs
       set_fact:
         servicename: "{{ smart_contract_name}}-srvc"
-        ca_root_cert: "{{ peer_tls.ca | b64decode | replace('\n','\\n') }}"
-        peer_cert: "{{ peer_tls.cert | b64decode | replace('\n','\\n') }}"
-        peer_key: "{{ peer_tls.private_key | b64decode | replace('\n','\\n') }}"
+        ca_root_cert: "{{ chaincode_tls.ca | b64decode | replace('\n','\\n') }}"
+        # peer_cert: "{{ peer_tls.cert  }}"
+        # peer_key: "{{ peer_tls.private_key }}"
 
     - name: Create a Service object for the chaincode
       community.kubernetes.k8s:
