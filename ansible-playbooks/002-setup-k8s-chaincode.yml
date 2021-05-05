@@ -9,9 +9,10 @@
     - ../config/ibp-org1-vars.yml
     - ../config/ibmcloud-vars.yml
   vars:
+    servicename: "{{ smart_contract_name}}-srvc"
     peer_tls: "{{lookup('file','{{ home_dir }}/_cfg/org1peer_tls.json') | from_json }}"
     chaincode_tls: "{{lookup('file','{{ home_dir }}/_cfg/{{ servicename }}.{{ namespace }}_tls.json') | from_json }}"
-    servicename: "{{ smart_contract_name}}-srvc"
+
   tasks:
 
     - name: Setup the namepsace

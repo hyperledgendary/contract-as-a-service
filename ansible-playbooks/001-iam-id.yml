@@ -51,8 +51,11 @@
       ansible.builtin.debug:
         msg: "{{ iam_service_id }}    {{iam_service_iamid}}"
 
-    # - name: Create Service Policy
-      # command: ibmcloud iam service-policy-create {{ iam_service_id }} --roles Reader --service-name container-registry
+    # Need to use IBMCloud CLI to achieve this as the Ansible tasks
+    # https://github.com/IBM-Cloud/terraform-provider-ibm/issues/2377
+    #
+    - name: Create Service Policy
+      command: ibmcloud iam service-policy-create {{ iam_service_id }} --roles Reader --service-name container-registry
 
     # - name: Create Service Policy
     #   ibm_iam_service_policy:
@@ -70,6 +73,8 @@
     #   ansible.builtin.debug:
     #     msg: "{{ policy }} "
 
+
+    # Query the policy to check that the container registry has indeed been added
     - name: Query the Policy
       ibm_iam_service_policy_info:
         region: "{{ region }}"

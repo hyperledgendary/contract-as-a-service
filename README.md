@@ -56,7 +56,7 @@ You'll be able to use the `kubectl` command now, and the K8S Ansible tasks later
 ### Additional tools
 
 - Nodejs (version 12+). Suggested you use `nvm` for this
-
+- To make it easy to run the `ansible-playbook` commands, they have been put into a justfile - download [just here](https://github.com/casey/just#pre-built-binaries). Very similar syntax to make, but just files will automatically read the `.env` file for api keys, and doesn't echo these to the console. If you don't wish to use this, `cat justfile` and copy the playbook commands.
 - Docker for building the containers
 - There are a couple of NodeJS utilities needed (will install those as needed below)
 
@@ -100,7 +100,7 @@ IBP_KEY=xxxxxxxxxxxxxxxxxxxx
 IBP_ENDPOINT=https://xxxxxxxxxxxxxxxxxxxxxxxxx-ibpconsole-console.so01.blockchain.test.cloud.ibm.com
 ```
 
-Then set these as environment variables.
+Then set these as environment variables - if you use the justfile these are automatically loaded.
 
 ```bash
 export $(grep -v '^#' .env | xargs)
@@ -108,17 +108,17 @@ export $(grep -v '^#' .env | xargs)
 
 ## QuickStart
 
-All the commands below have been put into a makefile that can be run as follows
+All the commands below have been put into a justfile that can be run as follows
 
-- `make nodecontract` builds and published the Docker image for the Node.js contract
-- `make javacontract` builds and published the Docker image for the Java contract
-- `make gocontract` builds and publised the Docker image for the Go contract (coming soon)
-- `make network` builds the network of Peers, Orderers and CAs
-- `make tls` creates the X509 certificates required to work with TLS between chaincode and peer
-- `make iamsetup` creates the secret key to pull from the container registry 
-- `make nodedeploy` Deploys the Node chaincode definition to the peer, and stands up the chaincode container in a separate k8s namespace from IBP
-- `make javadeploy` Deploys the Java chaincode definition to the peer, and stands up the chaincode container in a separate k8s namespace from IBP
-- `make identity` creates a application identity for client applications to use.
+- `just nodecontract` builds and published the Docker image for the Node.js contract
+- `just javacontract` builds and published the Docker image for the Java contract
+- `just gocontract` builds and publised the Docker image for the Go contract (coming soon)
+- `just network` builds the network of Peers, Orderers and CAs
+- `just tls` creates the X509 certificates required to work with TLS between chaincode and peer
+- `just iamsetup` creates the secret key to pull from the container registry 
+- `just nodedeploy` Deploys the Node chaincode definition to the peer, and stands up the chaincode container in a separate k8s namespace from IBP
+- `just javadeploy` Deploys the Java chaincode definition to the peer, and stands up the chaincode container in a separate k8s namespace from IBP
+- `just identity` creates a application identity for client applications to use.
 
 ## Node.js Smart Contract
 The contract in this example is simple, but it's here just to demonstrate how it can be deployed. It's the basic getting started contract found in the Fabric Docs and the IBP VSCode exentions. The key thing is the dockerfile that is used to package up the contract, and some minor changes to the package.json
@@ -166,15 +166,15 @@ CMD ["npm", "run", "start:server"]
 Note the PORT is being set as 9999, and the command that is being run. So long as that command is run - and a port is setup that's the key thing. The port can be of your own choosing, 9999 is used here.
 
 Secondly you need to build and push this to a registry. The registry that I'm using is the container registry connected to the IBM K8S Cluster.
-
+Ensure you've logged into the container registry (`ibmcloud cr login`) and push the docker image
 ```bash 
+just contract node
+just contract java
+
+# or individal docker commands
+
 docker build -t caasdemo-node .
 docker tag caasdemo-node stg.icr.io/ibp_demo/caasdemo-node:latest
-```
-
-Ensure you've logged into the container registry (`ibmcloud cr login`) and push the docker image
-
-```bash
 docker push  stg.icr.io/ibp_demo/caasdemo-node:latest
 ```
 
@@ -191,6 +191,8 @@ We need to create the Peers/Orderers and CAs etc. The `ansible-playbooks/000-cre
 As IBP Playbooks are concerned this is very standard, so I won't go into detail of how this works.
 
 ```bash
+just network
+# or
 ansible-playbook ./ansible-playbooks/000-create-network.yml \
     --extra-vars api_key=${IBP_KEY} \
     --extra-vars api_endpoint=${IBP_ENDPOINT} \
@@ -201,7 +203,16 @@ ansible-playbook ./ansible-playbooks/000-create-network.yml \
 
 Then we need to setup the chaincode; this is where some of the 'magic' happens, so we'll go through it in more detail.
 
+### Deploy chaincode playbook details
+
+This is the `001-setup-k8s-chaincode.yml` playbook.
+
 ```bash
+just deploy node
+just deploy java
+
+# alternatively chainging the contract name as needed
+
 ansible-playbook ./ansible-playbooks/001-setup-k8s-chaincode.yml \
     --extra-vars api_key=${IBP_KEY} \
     --extra-vars api_endpoint=${IBP_ENDPOINT} \
@@ -213,11 +224,8 @@ ansible-playbook ./ansible-playbooks/001-setup-k8s-chaincode.yml \
     --extra-vars home_dir=${DIR} \
 ```
 
-### Playbook details
 
-This is the `001-setup-k8s-chaincode.yml` playbook.
-
-K8S namespace. First thing is to create a namespace separate from the running IBP instance.
+1. K8S namespace. First thing is to create a namespace separate from the running IBP instance.
 
 ```yaml
     - name: Setup the namepsace
@@ -228,7 +236,7 @@ K8S namespace. First thing is to create a namespace separate from the running IB
         state: present
 ```
 
-Service instance. A key thing is the peer being able to locate the chaincode, and connect. This is done via a Service and using a ClusterIP type service. The port here is the same as mentioned above, and be changed if you wish. 
+2. Service instance. A key thing is the peer being able to locate the chaincode, and connect. This is done via a Service and using a ClusterIP type service. The port here is the same as mentioned above, and be changed if you wish. 
 
 ```yaml
     - name: Create a Service object from an inline definition
@@ -253,7 +261,7 @@ Service instance. A key thing is the peer being able to locate the chaincode, an
       register: result
 ```
 
-'Proxy' Chaincode. You need to install a 'proxy' chaincode to indicate where the chaincode is actually running. The 'code' is a json file `connection.json`. The following two steps create this file and package it up as an 'external chaincode'
+3. 'Proxy' Chaincode. You need to install a 'proxy' chaincode to indicate where the chaincode is actually running. The 'code' is a json file `connection.json`. The following two steps create this file and package it up as an 'external chaincode'
 
 ```yaml
     - copy:
@@ -263,9 +271,9 @@ Service instance. A key thing is the peer being able to locate the chaincode, an
       command: ../pkgcc.sh -l nodecontract -t external connection.json
 ```
 
-Install, Approve and Commit. The chaincode needs to be installed, approved and committed. This is a standard use of the ansible tasks. They can be used sequentially here, but in a multi organizational environment would need to be handled differently.
+4. Install, Approve and Commit. The chaincode needs to be installed, approved and committed. This is a standard use of the ansible tasks. They can be used sequentially here, but in a multi organizational environment would need to be handled differently.
 
-Chaincode Configuration. The actual running chaincode needs to know it's 'name' this is assigned by the peer in the previous install step. We can capture that in ansible and put it into a Config Map. 
+5. Chaincode Configuration. The actual running chaincode needs to know it's 'name' this is assigned by the peer in the previous install step. We can capture that in ansible and put it into a Config Map. 
 
 *Note* this is Node chaincode, so the `CHAINCODE_SERVER_ADDRESS` is `0.0.0.0` again with the port 9999.  
 
@@ -286,7 +294,7 @@ Chaincode Configuration. The actual running chaincode needs to know it's 'name' 
             CHAINCODE_ID: "{{ installcc_result.installed_chaincode.package_id }}"
 ```
 
-Deploy the Chaincode. Finally we can deploy the chaincode and get it running. 
+6. Deploy the Chaincode. Finally we can deploy the chaincode and get it running. 
 
 ```yaml
     - name: Create a ConfigMap for the chaincode configuration
@@ -326,7 +334,7 @@ Deploy the Chaincode. Finally we can deploy the chaincode and get it running.
                   - name: pullimg-secret
 ```
 
-This is tying a few things together.
+This final deployment is tying a few things together.
 
 - The Docker image name of the container, and the secret used to pull this from the registry
 - Again we can see the port in use
@@ -336,7 +344,7 @@ This is tying a few things together.
 
 We've achieved the following:
 
-- Created and built a Nodejs Smart Contract, and produced a Docker image to host it (the chaincode).
+- Created and built a Nodejs (or Java or Go) Smart Contract, and produced a Docker image to host it (the chaincode).
 - This has been pushed to the docker registry, and we've created a secret to be used to pull the image
 - Using Ansible, we've created the IBP network, and installed a proxy chaincode
 - K8S resources of the config maps, the service and deployment have been created
