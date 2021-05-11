@@ -13,27 +13,26 @@ To show how with IBP 2.5.2, the Chaincode containers that run Smart Contracts ca
 - Deployment of the actual chaincode
 - Testing it!
 
-And using TLS between the peer and chaincode. [please note that this isn't yet working in this example]
+And using TLS between the peer and chaincode.
 
 ## Setup
 
-This tutorial will assume that you have installed IBP, with a free K8S Cluster created. The free cluser will last 28 days, but is perfectly sufficient for this. You can, of course, use another K8S environment if you have IBP installed there. 
+This tutorial will assume that you have an installed IBP, hosted within an IKS cluster. This will also 
 
 ### Suitable Python environment
-Ansible is a main feature of this setup, and as Ansible is written in Python getting a Python environment is essential.  Experience has shown getting python setup can be time consuming and awkward. The easiest way that I've found to do this succesfully - and most importantly *repeatdly succesful* is using pipenv
+Ansible is a main feature of this setup, and as Ansible is written in Python getting a Python environment is essential.  Experience has shown getting python setup can be time consuming and awkward. The easiest way that I've found to do this succesfully - and most importantly *repeatdly succesful* is using [pipenv](https://pipenv.pypa.io/en/latest/)
 
 I'll use this seqeuence of commands to get started here
 
 ```bash
 pipenv --python 3.8
 pipenv install fabric-sdk-py 
-pipenv install 'openshift==0.11.2'
-pipenv install jq
+pipenv install 'openshift==0.11.2'   
 ansible-galaxy collection install ibm.blockchain_platform community.kubernetes ibmcloud.collection
 # add --force to get upgrade to new versions of these collections
-# note used to use moreati.jq but believed not to be required
 ```
 
+The ibm.blockchain-platform collection can also target OpenShift environments, which is why that is listed. 
 Finally run `pipenv shell` to get into a shell that has the required python configuration.
 
 ### Login into IBM Cloud
@@ -47,7 +46,7 @@ I would recommend logging in now to the cloud. If you go to the cluster overpage
 
 ```bash
 ibmcloud login -a test.cloud.ibm.com -r us-south -g default
-ibmcloud ks cluster config --cluster avaluewillbehere
+ibmcloud ks cluster config --cluster <avaluewillbehere>
 ibmcloud cr login
 ```
 
@@ -83,8 +82,6 @@ peer:
   Docker Namespace: hyperledger
 ```
 
-
-
 ### API Keys
 There are 2 API keys you need:
 
@@ -108,20 +105,25 @@ export $(grep -v '^#' .env | xargs)
 
 ## QuickStart
 
-All the commands below have been put into a justfile that can be run as follows
+All the commands below have been put into a justfile with the following 'recipes'
 
-- `just nodecontract` builds and published the Docker image for the Node.js contract
-- `just javacontract` builds and published the Docker image for the Java contract
-- `just gocontract` builds and publised the Docker image for the Go contract (coming soon)
-- `just network` builds the network of Peers, Orderers and CAs
-- `just tls` creates the X509 certificates required to work with TLS between chaincode and peer
-- `just iamsetup` creates the secret key to pull from the container registry 
-- `just nodedeploy` Deploys the Node chaincode definition to the peer, and stands up the chaincode container in a separate k8s namespace from IBP
-- `just javadeploy` Deploys the Java chaincode definition to the peer, and stands up the chaincode container in a separate k8s namespace from IBP
-- `just identity` creates a application identity for client applications to use.
-
-## Node.js Smart Contract
+```
+just --list
+Available recipes:
+    buildcontract LANG # Currently set to push to IBM staging
+    clean              # removes the _cfg directory where wallets, connection profiles etc are stored.
+    deploycaas LANG    # Note the contract version and sequence
+    deploymanaged LANG # This the managed way of deploying chaincode
+    iamsetup           # means it's best to do this by hand with the CLI. (it's a one time setup)
+    network            # This builds the Fabric Network - Peers, CAs, Orderers and creates the admin identities
+    ping LANG          # Ping the contract working as DigiBank
+    registerapp        # This creates an application identity that can be used to interact via client applications
+    tls LANG           # For TLS, configure new Certificates approved by the Org1 CA.
+```
+## Smart Contract
 The contract in this example is simple, but it's here just to demonstrate how it can be deployed. It's the basic getting started contract found in the Fabric Docs and the IBP VSCode exentions. The key thing is the dockerfile that is used to package up the contract, and some minor changes to the package.json
+
+NOTE: There are other languages in this repo, but to-date they are not yet tested. Only the NodeJS one is good to go.
 
 ### Chaincode-as-a-server
 'Normally' the Peers will start (directly or indirectly in the case of things like IBP) the chaincode processes running. In this case, when the chaincode starts it 'calls back' to the peer to 'register'.
@@ -136,17 +138,17 @@ The key is to add this to the package.json scripts section.
  "start:server": "fabric-chaincode-node server --chaincode-address=$CHAINCODE_SERVER_ADDRESS --chaincode-id=$CHAINCODE_ID --chaincode-tls-key-file=/hyperledger/privatekey.pem --chaincode-tls-client-cacert-file=/hyperledger/rootcert.pem --chaincode-tls-cert-file=/hyperledger/cert.pem"
 ```
 
-I also like to add an `echo $CHAINCODE_SERVER_ADDRESS $CHAINCODE_ID && ` before the command `fabric-chaincode-node` command to get some debug.
-*Note* there are NO changes to the actual contract or libraries used.. it's just this command in the `package.json`
+*Note* there are NO changes to the actual contract or libraries used.. it's just this command in the `package.json` along with the Docker-ization parts.
 
 The TLS settings are refering to files that will mounted into the chaincode when this is deployed into K8S. The actual locations are arbitrary so you may alter them if you wish. 
+In the package.json there is also the non-TLS command
 
 ### Dockerfile 
 
 Firstly the dockerfile itself. This is a relatively simple node.js dockerfile, you've liberty here construct this as you wish. 
 
 ```docker
-FROM node:12.15-alpine
+FROM node:12.15
 
 WORKDIR /usr/src/app
 
@@ -157,20 +159,32 @@ RUN npm install --production
 # Bundle app source
 COPY . /usr/src/app
 
+ENV TINI_VERSION v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+
+COPY docker/docker-entrypoint.sh /usr/src/app/docker-entrypoint.sh
+
 ENV PORT 9999
 EXPOSE 9999
 
-CMD ["npm", "run", "start:server"]
+ENTRYPOINT [ "/tini", "--", "/usr/src/app/docker-entrypoint.sh" ]
 ```
 
-Note the PORT is being set as 9999, and the command that is being run. So long as that command is run - and a port is setup that's the key thing. The port can be of your own choosing, 9999 is used here.
+Note the PORT is being set as 9999, and the command that is being run. So long as that command is run - and a port is setup that's the key thing. The port can be of your own choosing, 9999 is used here. The `docker-entrypoint.sh` script is there to swap between TLS and non-TLS
+
+```bash
+if [ "${CORE_PEER_TLS_ENABLED,,}"  = "true" ]; then
+    npm run start:server
+else
+    npm run start:server-nontls
+fi
+```
 
 Secondly you need to build and push this to a registry. The registry that I'm using is the container registry connected to the IBM K8S Cluster.
 Ensure you've logged into the container registry (`ibmcloud cr login`) and push the docker image
 ```bash 
-just contract node
-just contract java
-
+just buildcontract node
 # or individal docker commands
 
 docker build -t caasdemo-node .
@@ -178,168 +192,44 @@ docker tag caasdemo-node stg.icr.io/ibp_demo/caasdemo-node:latest
 docker push  stg.icr.io/ibp_demo/caasdemo-node:latest
 ```
 
+Please change the `ibp_demo` to a namespace that you have in whatever container registry you are using. 
+
 ## Secret to pull the docker image
 
 A K8S secret needs to be created with credentials of how to pull images from the Container Registry. Documentation is on line at, https://cloud.ibm.com/docs/containers?topic=containers-registry#other_registry_accounts of the sequence of commands that you need.
 
-A Ansible playbook `ansible-playbooks/001-iam-id.yml` contains the required modules, bbut there's a defect in the IBM Terraform that's stopping this working at present (https://github.com/IBM-Cloud/terraform-provider-ibm/issues/2377). So do this via the cli commands in the above documentation link. They are summarised at the top of the playbook as well. 
+A Ansible playbook `ansible-playbooks/001-iam-id.yml` contains the required modules, but there's a defect in the IBM Terraform that's stopping this working at present (https://github.com/IBM-Cloud/terraform-provider-ibm/issues/2377). So do this via the cli commands in the above documentation link. They are summarised at the top of the playbook as well. 
+
+This is a one time only setup.
+
+(Note need to check if this is has been fixes)
 
 ## IBP Configuration
 
-We need to create the Peers/Orderers and CAs etc. The `ansible-playbooks/000-create-network.yml` will create this for us. 
-
-As IBP Playbooks are concerned this is very standard, so I won't go into detail of how this works.
+We need to create the Peers/Orderers and CAs etc. As IBP Playbooks are concerned this is very standard, so I won't go into detail of how this works. It's using the same playbooks as in the Ansible Tutorial, but with a configuration to create 2 peers for the ogranization. 
 
 ```bash
 just network
-# or
-ansible-playbook ./ansible-playbooks/000-create-network.yml \
-    --extra-vars api_key=${IBP_KEY} \
-    --extra-vars api_endpoint=${IBP_ENDPOINT} \
-    --extra-vars api_token_endpoint=${API_TOKEN_ENDPOINT} \
-    --extra-vars channel_name=${CHANNEL_NAME} \
-    --extra-vars home_dir=${DIR} 
 ```
 
 Then we need to setup the chaincode; this is where some of the 'magic' happens, so we'll go through it in more detail.
 
-### Deploy chaincode playbook details
+### Deploy chaincode playbooks
+There are three playbooks here, separated for practical convience - you may order these as you wish. 
 
-This is the `001-setup-k8s-chaincode.yml` playbook.
+**First**, is the `002-k8s-cc-tls-setup.yml` playbook. This creates an 'indentity' with the organzaitions CA and the certificates of that are then used for TLS.
 
-```bash
-just deploy node
-just deploy java
+`just tls node` will create two indenties, one to for the chaincode, and one for th epeer. 
 
-# alternatively chainging the contract name as needed
+Note - should modify this to get an indentity for each chaincode - the `connection.json` only needs to know the CA of the chaincode certificates.
 
-ansible-playbook ./ansible-playbooks/001-setup-k8s-chaincode.yml \
-    --extra-vars api_key=${IBP_KEY} \
-    --extra-vars api_endpoint=${IBP_ENDPOINT} \
-    --extra-vars api_token_endpoint=${API_TOKEN_ENDPOINT} \
-    --extra-vars channel_name=${CHANNEL_NAME} \
-    --extra-vars smart_contract_name=nodecontract \
-    --extra-vars smart_contract_version=2 \
-    --extra-vars smart_contract_sequence=2 \
-    --extra-vars home_dir=${DIR} \
-```
+**Second**, is the `002-setup-k8s-chaincode.yml`. This playbook will create the K8S services for each peers own chaincode, and also create the `connection.json` that then packaged as a regular chaincode archive.
 
+**Third**, is tje `003-start-k8s-chaincode.yml`. This playbook will install the chaincode on each peer and then approve the chaincode. It then commits this.
 
-1. K8S namespace. First thing is to create a namespace separate from the running IBP instance.
+Two ConfigMaps are created, one for the TLS Cert keys, the second for regular Chaincode Configuration. Each is named according to this basic scheme `{{ smart_contract_name }}.v{{ smart_contract_sequence }}.conf"` - this is to ensure then when a new chaincode sequence number is used, a new config map name is used. This will ensure the chaincode pod will be updated.
 
-```yaml
-    - name: Setup the namepsace
-      community.kubernetes.k8s:
-        name: caasdemo
-        api_version: v1
-        kind: Namespace
-        state: present
-```
-
-2. Service instance. A key thing is the peer being able to locate the chaincode, and connect. This is done via a Service and using a ClusterIP type service. The port here is the same as mentioned above, and be changed if you wish. 
-
-```yaml
-    - name: Create a Service object from an inline definition
-      community.kubernetes.k8s:
-        state: present
-        definition:
-          apiVersion: v1
-          kind: Service
-          metadata:
-            namespace: caasdemo
-            name: nodecc
-            labels:
-              app: caasdemo
-          spec:
-            ports:
-            - name: chaincode
-              port: 9999
-              targetPort: 9999
-              protocol: TCP
-            selector:
-              app: caasdemo
-      register: result
-```
-
-3. 'Proxy' Chaincode. You need to install a 'proxy' chaincode to indicate where the chaincode is actually running. The 'code' is a json file `connection.json`. The following two steps create this file and package it up as an 'external chaincode'
-
-```yaml
-    - copy:
-        content: "{{ result.result.spec | moreati.jq.jq('{address: \"nodecc.caasdemo:9999\",dial_timeout:\"10s\",tls_required:false}') }}"
-        dest: ./connection.json
-    - name: Create the archive
-      command: ../pkgcc.sh -l nodecontract -t external connection.json
-```
-
-4. Install, Approve and Commit. The chaincode needs to be installed, approved and committed. This is a standard use of the ansible tasks. They can be used sequentially here, but in a multi organizational environment would need to be handled differently.
-
-5. Chaincode Configuration. The actual running chaincode needs to know it's 'name' this is assigned by the peer in the previous install step. We can capture that in ansible and put it into a Config Map. 
-
-*Note* this is Node chaincode, so the `CHAINCODE_SERVER_ADDRESS` is `0.0.0.0` again with the port 9999.  
-
-```yaml
-    - name: Create a ConfigMap for the chaincode configuration
-      community.kubernetes.k8s:
-        state: present
-        definition:
-          apiVersion: v1
-          kind: ConfigMap
-          metadata:
-            name: nodecc.v5.conf
-            namespace: caasdemo
-            labels:
-              app:  caasdemo
-          data:
-            CHAINCODE_SERVER_ADDRESS: 0.0.0.0:9999
-            CHAINCODE_ID: "{{ installcc_result.installed_chaincode.package_id }}"
-```
-
-6. Deploy the Chaincode. Finally we can deploy the chaincode and get it running. 
-
-```yaml
-    - name: Create a ConfigMap for the chaincode configuration
-      community.kubernetes.k8s:
-        state: present
-        definition:
-          apiVersion: apps/v1
-          kind: Deployment
-          metadata:
-            namespace: caasdemo
-            name: caasdemo
-            labels:
-              app: caasdemo
-          spec:
-            replicas: 1
-            selector:
-              matchLabels:
-                app: caasdemo
-            template:
-              metadata:
-                labels:
-                  app: caasdemo
-              spec:
-                containers:
-                  - name: nodecc
-                    image: stg.icr.io/ibp_demo/caasdemo-node          
-                    resources:
-                      requests:
-                        memory: "50Mi"
-                        cpu: "0.1"
-                    ports:
-                    - containerPort: 9999
-                    envFrom:
-                      - configMapRef:
-                          name: nodecc.v5.conf
-                imagePullSecrets:
-                  - name: pullimg-secret
-```
-
-This final deployment is tying a few things together.
-
-- The Docker image name of the container, and the secret used to pull this from the registry
-- Again we can see the port in use
-- The config map being used to configure the environment.
-
+Two deployments are used to stand up the chaincode, each for use by a different peer. 
 ## Checkpoint!
 
 We've achieved the following:
@@ -350,6 +240,8 @@ We've achieved the following:
 - K8S resources of the config maps, the service and deployment have been created
 
 Next steps are to create an indentity, and use that to submit transactions
+
+**Note sections below still need updating**
 
 ## Create identities
 

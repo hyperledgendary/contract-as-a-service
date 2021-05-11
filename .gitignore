@@ -1,4 +1,7 @@
 ./*Admin.json
 _cfg/
 .env
+.venv
 key.json
+auth-vars.yml
+node_modules

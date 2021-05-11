@@ -1,0 +1,220 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+- name: Setup k8s resources for chaincode
+  hosts: localhost
+  vars_files:
+    - ../config/common-vars.yml
+    - ../config/digibank-vars.yml
+    - ../config/ibmcloud-vars.yml
+    - ../config/caas-vars.yml
+    - ../config/auth-vars.yml
+  vars:
+    servicename: "{{ smart_contract_name }}-srvc"
+    config_dir: "{{ home_dir }}/_cfg"
+    peer_tls: "{{lookup('file','{{ config_dir }}/mcpeer1node_tls.json') | from_json }}"
+    chaincode_tls: "{{lookup('file','{{ config_dir }}/dbpeer1-{{ smart_contract_name }}-srvc.{{ namespace }}_tls.json') | from_json }}"
+
+  tasks:
+    - name: Install the chaincode on the peer
+      ibm.blockchain_platform.installed_chaincode:
+        api_endpoint: "{{ api_endpoint }}"
+        api_authtype: "{{ api_authtype }}"
+        api_key: "{{ api_key }}"
+        api_secret: "{{ api_secret | default(omit) }}"
+        api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
+        peer: "{{ org1_peer_name }}1"
+        identity: "{{ config_dir }}/{{ org1_name }} Admin.json"
+        msp_id: "{{ org1_msp_id }}"
+        path: "{{ smart_contract_package }}"
+      register: installcc_result
+
+    - name: Install the chaincode on the peer
+      ibm.blockchain_platform.installed_chaincode:
+        api_endpoint: "{{ api_endpoint }}"
+        api_authtype: "{{ api_authtype }}"
+        api_key: "{{ api_key }}"
+        api_secret: "{{ api_secret | default(omit) }}"
+        api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
+        peer: "{{ org1_peer_name }}2"
+        identity: "{{ config_dir }}/{{ org1_name }} Admin.json"
+        msp_id: "{{ org1_msp_id }}"
+        path: "{{ smart_contract_package }}"
+      register: installcc_result
+
+    - name: Approve the chaincode on the channel
+      ibm.blockchain_platform.approved_chaincode:
+        api_endpoint: "{{ api_endpoint }}"
+        api_authtype: "{{ api_authtype }}"
+        api_key: "{{ api_key }}"
+        api_secret: "{{ api_secret | default(omit) }}"
+        api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
+        peer: "{{ org1_peer_name }}1"
+        identity: "{{ config_dir }}/{{ org1_name }} Admin.json"
+        msp_id: "{{ org1_msp_id }}"
+        channel: "{{ channel_name }}"
+        name: "{{ smart_contract_name }}"
+        version: "{{ smart_contract_version }}"
+        package_id: "{{ installcc_result.installed_chaincode.package_id }}"
+        sequence: "{{ smart_contract_sequence }}"
+        endorsement_policy: "{{ smart_contract_endorsement_policy | default(omit) }}"
+        collections_config: "{{ smart_contract_collections_file | default(omit) }}"
+
+    - name: Debug hello
+      debug: var=installcc_result.installed_chaincode.package_id
+
+    - name: Commit the chaincode on the channel
+      ibm.blockchain_platform.committed_chaincode:
+        api_endpoint: "{{ api_endpoint }}"
+        api_authtype: "{{ api_authtype }}"
+        api_key: "{{ api_key }}"
+        api_secret: "{{ api_secret | default(omit) }}"
+        api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
+        peer: "{{ org1_peer_name }}1"
+        identity: "{{ config_dir }}/{{ org1_name }} Admin.json"
+        msp_id: "{{ org1_msp_id }}"
+        channel: "{{ channel_name }}"
+        organizations:
+          - "{{ org1_name }}"
+        name: "{{ smart_contract_name }}"
+        version: "{{ smart_contract_version }}"
+        sequence: "{{ smart_contract_sequence }}"
+        endorsement_policy: "{{ smart_contract_endorsement_policy | default(omit) }}"
+        collections_config: "{{ smart_contract_collections_file | default(omit) }}"
+
+    - name: Create a ConfigMap for the chaincode configuration
+      community.kubernetes.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: "{{ smart_contract_name }}.v{{ smart_contract_sequence }}.conf"
+            namespace: "{{ namespace }}"
+            labels:
+              app: "{{ smart_contract_name }}"
+          data:
+            CHAINCODE_SERVER_ADDRESS: 0.0.0.0:9999
+            CHAINCODE_ID: "{{ installcc_result.installed_chaincode.package_id }}"
+            CORE_TLS_CLIENT_KEY_PATH: "/hyperledger/privatekey.pem"
+            CORE_TLS_CLIENT_CERT_PATH: "/hyperledger/cert.pem"
+            CORE_PEER_TLS_ROOTCERT_FILE: "/hyperledger/rootcert.pem"
+            CORE_PEER_TLS_ENABLED: "false"
+            CORE_CHAINCODE_LOGGING_LEVEL: "debug"
+
+    - name: Create ConfigMap for TLS certs keys
+      community.kubernetes.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: "{{ smart_contract_name }}.tls.v{{ smart_contract_sequence }}.conf"
+            namespace: "{{ namespace }}"
+            labels:
+              app: "{{ smart_contract_name }}"
+          data:
+            KEY: "{{ chaincode_tls.private_key | b64decode }}"
+            CERT: "{{ chaincode_tls.cert | b64decode }}"
+            ROOT_CERT: "{{ chaincode_tls.ca | b64decode }}"
+
+    - name: Create a Deployment for the chaincode configuration
+      community.kubernetes.k8s:
+        state: present
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            namespace: "{{ namespace }}"
+            name: "dbpeer1-{{ smart_contract_name }}-dpmnt"
+            labels:
+              app: "dbpeer1-{{ smart_contract_name }}"
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: "dbpeer1-{{ smart_contract_name }}-1"
+            template:
+              metadata:
+                labels:
+                  app: "dbpeer1-{{ smart_contract_name }}-1"
+              spec:
+                containers:
+                  - name: "{{ smart_contract_name }}-cc"
+                    image: "{{ chaincode_docker_image }}"
+                    resources:
+                      requests:
+                        memory: "50Mi"
+                        cpu: "0.1"
+                    ports:
+                      - containerPort: 9999
+                    volumeMounts:
+                      - name: tlscreds
+                        mountPath: /hyperledger/privatekey.pem
+                        subPath: KEY
+                      - name: tlscreds
+                        mountPath: /hyperledger/cert.pem
+                        subPath: CERT
+                      - name: tlscreds
+                        mountPath: /hyperledger/rootcert.pem
+                        subPath: ROOT_CERT
+                    envFrom:
+                      - configMapRef:
+                          name: "{{ smart_contract_name }}.v{{ smart_contract_sequence }}.conf"
+                imagePullSecrets:
+                  - name: pullimg-secret
+                volumes:
+                  - name: tlscreds
+                    configMap:
+                      name: "{{ smart_contract_name }}.tls.v{{ smart_contract_sequence }}.conf"
+
+    - name: Create a Deployment for the chaincode configuration
+      community.kubernetes.k8s:
+        state: present
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            namespace: "{{ namespace }}"
+            name: "dbpeer2-{{ smart_contract_name }}-dpmnt"
+            labels:
+              app: "dbpeer2-{{ smart_contract_name }}"
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: "dbpeer2-{{ smart_contract_name }}-1"
+            template:
+              metadata:
+                labels:
+                  app: "dbpeer2-{{ smart_contract_name }}-1"
+              spec:
+                containers:
+                  - name: "{{ smart_contract_name }}-cc"
+                    image: "{{ chaincode_docker_image }}"
+                    resources:
+                      requests:
+                        memory: "50Mi"
+                        cpu: "0.1"
+                    ports:
+                      - containerPort: 9999
+                    volumeMounts:
+                      - name: tlscreds
+                        mountPath: /hyperledger/privatekey.pem
+                        subPath: KEY
+                      - name: tlscreds
+                        mountPath: /hyperledger/cert.pem
+                        subPath: CERT
+                      - name: tlscreds
+                        mountPath: /hyperledger/rootcert.pem
+                        subPath: ROOT_CERT
+                    envFrom:
+                      - configMapRef:
+                          name: "{{ smart_contract_name }}.v{{ smart_contract_sequence }}.conf"
+                imagePullSecrets:
+                  - name: pullimg-secret
+                volumes:
+                  - name: tlscreds
+                    configMap:
+                      name: "{{ smart_contract_name }}.tls.v{{ smart_contract_sequence }}.conf"

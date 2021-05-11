@@ -1,0 +1,7 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+
+# variables specific to setting up the chaincode as a service
+smart_contract_name: caas-cc

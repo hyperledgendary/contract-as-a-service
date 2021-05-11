@@ -1,4 +1,4 @@
-FROM node:12.15-alpine
+FROM node:12.15
 
 WORKDIR /usr/src/app
 
@@ -9,7 +9,13 @@ RUN npm install --production
 # Bundle app source
 COPY . /usr/src/app
 
+ENV TINI_VERSION v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+
+COPY docker/docker-entrypoint.sh /usr/src/app/docker-entrypoint.sh
+
 ENV PORT 9999
 EXPOSE 9999
 
-CMD ["npm", "run", "start:server"]
+ENTRYPOINT [ "/tini", "--", "/usr/src/app/docker-entrypoint.sh" ]

@@ -1,0 +1,61 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+- name: Register application
+  hosts: localhost
+  vars_files:
+    - ../config/common-vars.yml
+    - ../config/digibank-vars.yml
+    - ../config/auth-vars.yml
+  tasks:
+    - name: Register a new identity
+      ibm.blockchain_platform.registered_identity:
+        api_endpoint: "{{ api_endpoint }}"
+        api_authtype: "{{ api_authtype }}"
+        api_key: "{{ api_key }}"
+        api_secret: "{{ api_secret | default(omit) }}"
+        api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
+        certificate_authority: "{{ org1_ca_name }}"
+        registrar: "{{ wallet_dir }}/{{ org1_ca_name }} Admin.json"
+        enrollment_id: "{{ application_enrollment_id }}"
+        enrollment_secret: "{{ application_enrollment_secret }}"
+        max_enrollments: "{{ application_max_enrollments }}"
+        type: "{{ application_enrollment_type }}"
+        attributes:
+          - name: "{{ smart_contract_name }}.admin"
+            value: "true"
+
+    - name: Create a connection profile
+      ibm.blockchain_platform.connection_profile:
+        api_endpoint: "{{ api_endpoint }}"
+        api_authtype: "{{ api_authtype }}"
+        api_key: "{{ api_key }}"
+        api_secret: "{{ api_secret | default(omit) }}"
+        api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
+        name: "{{ org1_name }} Gateway"
+        path: "{{ wallet_dir}}/{{ org1_name }} Gateway.json"
+        organization: "{{ org1_name }}"
+        certificate_authority: "{{ org1_ca_name }}"
+        peers:
+          - "{{ org1_peer_name }}1"
+          - "{{ org1_peer_name }}2"
+
+    - name: Enroll an identity
+      ibm.blockchain_platform.enrolled_identity:
+        api_endpoint: "{{ api_endpoint }}"
+        api_authtype: "{{ api_authtype }}"
+        api_key: "{{ api_key }}"
+        api_secret: "{{ api_secret | default(omit) }}"
+        api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
+        certificate_authority: "{{ org1_ca_name }}"
+        name: "{{ id_name }}"
+        enrollment_id: "{{ application_enrollment_id }}"
+        enrollment_secret: "{{ application_enrollment_secret }}"
+        path: "{{ wallet_dir }}/{{ id_name }}_appid.json"
+
+    - name: Make wallet directory
+      command: mkdir -p {{ wallet_dir }}/_wallets/{{ org1_name }}
+    
+    - name: Sort out the wallets and connection profile
+      command: weft import --wallet {{ wallet_dir }}/_wallets/{{ org1_name }} --mspid {{ org1_msp_id }}  --json  {{ wallet_dir }}/{{ id_name }}_appid.json        

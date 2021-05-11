@@ -1,0 +1,13 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+- name: Setup k8s resources for chaincode
+  hosts: localhost
+  tasks:
+    - name: Setup the namepsace
+      community.kubernetes.k8s:
+        name: "caasdemo"
+        api_version: v1
+        kind: Namespace
+        state: present
