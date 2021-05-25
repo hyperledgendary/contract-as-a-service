@@ -1,18 +1,18 @@
-# the first stage of our build will use a maven 3.6.1 parent image
-FROM gradle:jdk11 AS MAVEN_BUILD
+# the first stage of our build will use a maven 3.6.1 parent 
+FROM gradle:jdk11 AS GRADLE_BUILD
  
 # copy the build.gradle and src code to the container
 COPY src/ src/
 COPY build.gradle ./ 
 
 # Build and package our code
-RUN gradle build shadowJar
+RUN ./gradlew build shadowJar
 
 
 # the second stage of our build just needs the compiled files
 FROM openjdk:11
 # copy only the artifacts we need from the first stage and discard the rest
-COPY --from=MAVEN_BUILD /home/gradle/build/libs/chaincode.jar /chaincode.jar
+COPY --from=GRADLE_BUILD /home/gradle/build/libs/chaincode.jar /chaincode.jar
  
 ENV PORT 9999
 EXPOSE 9999

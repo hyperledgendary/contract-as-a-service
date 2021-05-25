@@ -7,7 +7,9 @@
   vars_files:
     - ../config/common-vars.yml
     - ../config/digibank-vars.yml
-    - ../config/auth-vars.yml
+  vars:
+     wallet_dir: "{{ cfg_dir }}/ibp_wallet/"
+
   tasks:
     - name: Install the chaincode on the peer
       ibm.blockchain_platform.installed_chaincode:
@@ -45,7 +47,9 @@
   vars_files:
     - ../config/common-vars.yml
     - ../config/digibank-vars.yml
-    - ../config/auth-vars.yml
+  vars:
+     wallet_dir: "{{ cfg_dir }}/ibp_wallet/"
+ 
   tasks:
     - name: Install the chaincode on the peer
       ibm.blockchain_platform.installed_chaincode:

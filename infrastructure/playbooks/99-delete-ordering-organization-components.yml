@@ -10,7 +10,7 @@
   vars_files:
     - ../config/common-vars.yml
     - ../config/ordering-org-vars.yml
-    - ../config/auth-vars.yml
+
   roles:
     - ibm.blockchain_platform.ordering_organization
 
@@ -19,7 +19,7 @@
   vars_files:
     - ../config/common-vars.yml
     - ../config/ordering-org-vars.yml
-    - ../config/auth-vars.yml
+
   tasks:
     - name: Remove imported organization
       ibm.blockchain_platform.external_organization:

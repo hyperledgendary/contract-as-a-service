@@ -10,9 +10,10 @@
     organization_msp_id: "{{ org2_msp_id }}"
     ca_name: "{{ org2_ca_name }}"
     peer_name: "{{ org2_peer_name }}"
+    peers: 2
+    wallet: "{{ cfg_dir }}/ibp_wallet"    
   vars_files:
-    - ../common-vars.yml
-    - ../magnetocorp-vars.yml
-    - ../auth-vars.yml
+    - ../config/common-vars.yml
+    - ../config/magnetocorp-vars.yml
   roles:
     - ibm.blockchain_platform.endorsing_organization

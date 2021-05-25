@@ -8,10 +8,9 @@
     state: present
     organization_name: "{{ ordering_org_name }}"
     organization_msp_id: "{{ ordering_service_msp }}"
-    wallet: "{{ wallet_dir }}"
+    wallet: "{{ cfg_dir }}/ibp_wallet" 
   vars_files:
     - ../config/common-vars.yml
     - ../config/ordering-org-vars.yml
-    - ../config/auth-vars.yml
   roles:
     - ibm.blockchain_platform.ordering_organization

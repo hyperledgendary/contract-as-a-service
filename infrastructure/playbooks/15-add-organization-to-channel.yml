@@ -5,9 +5,8 @@
 - name: Add the organization to the channel
   hosts: localhost
   vars_files:
-    - ../common-vars.yml
-    - ../digibank-vars.yml
-    - ../auth-vars.yml
+    - ../config/common-vars.yml
+    - ../config/magnetocorp-vars.yml
   tasks:
     - name: Get the ordering service information
       ibm.blockchain_platform.ordering_service_info:
@@ -32,7 +31,7 @@
         api_secret: "{{ api_secret | default(omit) }}"
         api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
         ordering_service: "{{ ordering_service_name }}"
-        identity: "{{ wallet_dir }}/{{ org1_name }} Admin.json"
+        identity: "{{ cfg_dir }}/ibp_wallet/{{ org1_name }} Admin.json"
         msp_id: "{{ org1_msp_id }}"
         operation: fetch
         name: "{{ channel_name }}"
@@ -101,7 +100,7 @@
     - name: Sign the channel configuration update
       ibm.blockchain_platform.channel_config:
         operation: sign_update
-        identity: "{{ wallet_dir }}/{{ org1_name }} Admin.json"
+        identity: "{{ cfg_dir }}/ibp_wallet/{{ org1_name }} Admin.json"
         msp_id: "{{ org1_msp_id }}"
         name: "{{ channel_name }}"
         path: config_update.bin
@@ -116,7 +115,7 @@
         api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
         operation: apply_update
         ordering_service: "{{ ordering_service_name }}"
-        identity: "{{ wallet_dir }}/{{ org1_name }} Admin.json"
+        identity: "{{ cfg_dir }}/ibp_wallet/{{ org1_name }} Admin.json"
         msp_id: "{{ org1_msp_id }}"
         name: "{{ channel_name }}"
         path: config_update.bin

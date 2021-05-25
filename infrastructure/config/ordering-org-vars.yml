@@ -2,9 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
-
-api_authtype: ibmcloud
-api_secret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ca_admin_enrollment_id: admin
 ca_admin_enrollment_secret: adminpw
 ordering_service_organization_admin_enrollment_id: orderingorgadmin
@@ -15,5 +12,5 @@ organization_admin_enrollment_secret: orderingorgadminpw
 ordering_service_enrollment_id: orderingorgorderer
 ordering_service_enrollment_secret: orderingorgordererpw
 ordering_service_msp: CAASOrdererMSP
-ordering_service_nodes: 1
+ordering_service_nodes: 5
 wait_timeout: 600

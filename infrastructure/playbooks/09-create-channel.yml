@@ -7,7 +7,9 @@
   vars_files:
     - ../config/common-vars.yml
     - ../config/digibank-vars.yml
-    - ../config/auth-vars.yml
+  vars:
+     wallet_dir: "{{ cfg_dir }}/ibp_wallet/"
+
   tasks:
     - name: Check to see if the channel already exists
       ibm.blockchain_platform.channel_block:

@@ -8,7 +8,8 @@ ordering_org_name: "CAAS Ordering Org"
 ordering_service_name: "CAAS Ordering Service"
 org1_name: "DigiBank"
 org1_msp_id: DigiBankMSP
-
+org2_name: "MagnetoCorp"
+org2_msp_id: MagnetoCorpMSP
 channel_name: caasnetwork
 
 # Latest Images
@@ -16,6 +17,6 @@ channel_name: caasnetwork
 # peer_version: "2.2.2-0"
 # ordering_service_version: "2.2.2-0"
 
-ca_version: 1.4.9-7
-peer_version: 2.2.2-2
-ordering_service_version: 2.2.2-2
+ca_version: 1.4.11-0
+peer_version: 2.2.2-0
+ordering_service_version: 2.2.2-0

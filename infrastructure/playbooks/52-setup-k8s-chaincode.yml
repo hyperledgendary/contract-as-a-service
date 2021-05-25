@@ -9,13 +9,15 @@
     - ../config/digibank-vars.yml
     - ../config/ibmcloud-vars.yml
     - ../config/caas-vars.yml
-    - ../config/auth-vars.yml
+
   vars:
     servicename: "{{ smart_contract_name }}-srvc"
     config_dir: "{{ home_dir }}/_cfg"
     peer_tls: "{{lookup('file','{{ config_dir }}/{{ peer_prefix }}_tls.json') | from_json }}"
-    chaincode_tls: "{{lookup('file','{{ config_dir }}/{{ peer_prefix }}-{{ smart_contract_name }}-srvc.{{ namespace }}_tls.json') | from_json }}"
+    chaincode_tls: "{{lookup('file','{{ config_dir }}/{{ peer_prefix }}1-{{ smart_contract_name }}-srvc.{{ namespace }}_tls.json') | from_json }}"
  
+# using one of the chaincode_tls ca... they need to have the same
+
   tasks:
     - name: Setup the namepsace
       community.kubernetes.k8s:

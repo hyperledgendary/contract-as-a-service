@@ -3,5 +3,5 @@ _cfg/
 .env
 .venv
 key.json
-auth-vars.yml
+auth-vars*.yml
 node_modules

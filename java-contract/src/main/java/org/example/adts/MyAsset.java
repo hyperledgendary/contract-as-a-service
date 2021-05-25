@@ -18,7 +18,7 @@ public class MyAsset {
     private static final Genson GENSON = new Genson();
 
     @Property()
-    private int value;
+    private String value;
 
     private String uid;
 
@@ -51,14 +51,14 @@ public class MyAsset {
      *
      * @return String value
      */
-    public int getValue() {
+    public String getValue() {
         return value;
     }
 
     /**
      * @param value String value
      */
-    public void setValue(final int value) {
+    public void setValue(final String value) {
         this.value = value;
     }
 

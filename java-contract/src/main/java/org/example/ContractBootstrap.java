@@ -10,7 +10,7 @@ import org.hyperledger.fabric.shim.ChaincodeServer;
 import org.hyperledger.fabric.shim.ChaincodeServerProperties;
 import org.hyperledger.fabric.shim.NettyChaincodeServer;
 
-public class Application {
+public class ContractBootstrap {
 
     private static final String CHAINCODE_SERVER_ADDRESS = "CHAINCODE_SERVER_ADDRESS";
     private static final String CHAINCODE_ID = "CHAINCODE_ID";

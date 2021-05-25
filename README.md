@@ -2,22 +2,21 @@
 
 *Aim* 
 
-To show how with IBP 2.5.2, the Chaincode containers that run Smart Contracts can be run in a namespace of your own choosing in K8S. This is a new feature of IBP, and is made possible by the underlying Hyperledger Fabric - Extenal Chaincode and Chaincode-as-a-server features.
+To show how with IBP 2.5.2, the Chaincode containers that run Smart Contracts can be run in a namespace of your own choosing in K8S. This is a new feature of IBP, and is made possible by the underlying Hyperledger Fabric Extenal Chaincode and Chaincode-as-a-server features.
 
 *Objectives*
 - Setup an Ansible based environment to use for configuration
-- Build a NodeJS Smart Contract in a Docker image & push the image to the repository
+- Build a NodeJS Smart Contract in a Docker image & push the image to an image repository
 - Using the IBP Ansible collection, provision a basic network of Peers and Orderers
 - Provision the K8S resources needed to run the Docker image
 - Create the secrets needed to retrieve the image
 - Deployment of the actual chaincode
 - Testing it!
-
-And using TLS between the peer and chaincode.
+- And using TLS between the peer and chaincode.
 
 ## Setup
 
-This tutorial will assume that you have an installed IBP, hosted within an IKS cluster. This will also 
+This tutorial will assume that you have an installed IBP, hosted within an IKS cluster. The same approach should be applicable to other K8S instances.
 
 ### Suitable Python environment
 Ansible is a main feature of this setup, and as Ansible is written in Python getting a Python environment is essential.  Experience has shown getting python setup can be time consuming and awkward. The easiest way that I've found to do this succesfully - and most importantly *repeatdly succesful* is using [pipenv](https://pipenv.pypa.io/en/latest/)
@@ -88,20 +87,20 @@ There are 2 API keys you need:
 - IBP Console service credentials.  These can be [created from the web ui](https://cloud.ibm.com/docs/account?topic=account-service_credentials)
 - IBM Cloud API key. Create a [User API Key](https://cloud.ibm.com/docs/account?topic=account-userapikey#manage-user-keys)
 
-Create a `.env` file that contains something like this.
-
+Create a `auth-vars-ibp.yml` file that contains something like this.
 ```
-# .env file 
-CLOUD_API_KEY=a8aUjPRMrIgLhQXGWcl9tR_FxtdQvjQtmPXnKrFHQIK5
-IBP_KEY=xxxxxxxxxxxxxxxxxxxx
-IBP_ENDPOINT=https://xxxxxxxxxxxxxxxxxxxxxxxxx-ibpconsole-console.so01.blockchain.test.cloud.ibm.com
+api_key: <apikey>
+api_endpoint: https://<ibp_console>
+api_authtype: basic
+api_secret: <secret>
 ```
 
-Then set these as environment variables - if you use the justfile these are automatically loaded.
-
-```bash
-export $(grep -v '^#' .env | xargs)
+And for `auth-vars-cloud.yml`
 ```
+cloud_api_key=<api key>
+```
+
+Note that this is only used for the script to create the secret needed to pull from the image registry
 
 ## QuickStart
 
@@ -140,8 +139,7 @@ The key is to add this to the package.json scripts section.
 
 *Note* there are NO changes to the actual contract or libraries used.. it's just this command in the `package.json` along with the Docker-ization parts.
 
-The TLS settings are refering to files that will mounted into the chaincode when this is deployed into K8S. The actual locations are arbitrary so you may alter them if you wish. 
-In the package.json there is also the non-TLS command
+The TLS settings are refering to files that will mounted into the chaincode when this is deployed into K8S. The actual locations are arbitrary so you may alter them if you wish. In the package.json there is also the non-TLS command
 
 ### Dockerfile 
 
@@ -182,17 +180,14 @@ fi
 ```
 
 Secondly you need to build and push this to a registry. The registry that I'm using is the container registry connected to the IBM K8S Cluster.
-Ensure you've logged into the container registry (`ibmcloud cr login`) and push the docker image
+Ensure you've logged into the container registry (`ibmcloud cr login`) and push the docker image. If you don't have a namespace already create one, with for example  `ibmcloud cr namespace-add ibp_caas`
+
+
 ```bash 
 just buildcontract node
-# or individal docker commands
-
-docker build -t caasdemo-node .
-docker tag caasdemo-node stg.icr.io/ibp_demo/caasdemo-node:latest
-docker push  stg.icr.io/ibp_demo/caasdemo-node:latest
 ```
+This will build and then tag the image with `uk.icr.io/<my_namespace>/<my_repository>:<my_tag>` and push it for later use.
 
-Please change the `ibp_demo` to a namespace that you have in whatever container registry you are using. 
 
 ## Secret to pull the docker image
 
@@ -202,7 +197,7 @@ A Ansible playbook `ansible-playbooks/001-iam-id.yml` contains the required modu
 
 This is a one time only setup.
 
-(Note need to check if this is has been fixes)
+[Note need to check if this is has been fixed]
 
 ## IBP Configuration
 
@@ -244,21 +239,6 @@ Next steps are to create an indentity, and use that to submit transactions
 **Note sections below still need updating**
 
 ## Create identities
-
-There's a Ansible playbook `002-create-identity.yml` that will create an identity, and make it available for use with Client side applications.
-
-```bash
-ansible-playbook ./config/ansible-playbooks/002-create-identity.yml \
-    --extra-vars id_name="fred" \
-    --extra-vars api_key=${IBP_KEY} \
-    --extra-vars api_endpoint=${IBP_ENDPOINT} \
-    --extra-vars api_token_endpoint=${API_TOKEN_ENDPOINT} \
-    --extra-vars channel_name=${CHANNEL_NAME} \
-    --extra-vars home_dir=${DIR} \
-    --extra-vars network_name=CAASDEMO \
-    --extra-vars org1_name=CAASOrg1 \
-    --extra-vars org1_msp_id=CAASOrg1MSP
-```
 
 The first half of this playbook is using the IBP collection to create the identity. The second half is using a community utility to take the identities from IBP and create a local wallet for use by the Fabric Client SDKs.
 

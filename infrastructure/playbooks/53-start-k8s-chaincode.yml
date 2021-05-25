@@ -9,12 +9,13 @@
     - ../config/digibank-vars.yml
     - ../config/ibmcloud-vars.yml
     - ../config/caas-vars.yml
-    - ../config/auth-vars.yml
+
   vars:
     servicename: "{{ smart_contract_name }}-srvc"
     config_dir: "{{ home_dir }}/_cfg"
-    peer_tls: "{{lookup('file','{{ config_dir }}/mcpeer1node_tls.json') | from_json }}"
-    chaincode_tls: "{{lookup('file','{{ config_dir }}/dbpeer1-{{ smart_contract_name }}-srvc.{{ namespace }}_tls.json') | from_json }}"
+    peer_tls: "{{lookup('file','{{ config_dir }}/dbpeer_tls.json') | from_json }}"
+    chaincode1_tls: "{{lookup('file','{{ config_dir }}/dbpeer1-{{ smart_contract_name }}-srvc.{{ namespace }}_tls.json') | from_json }}"
+    chaincode2_tls: "{{lookup('file','{{ config_dir }}/dbpeer2-{{ smart_contract_name }}-srvc.{{ namespace }}_tls.json') | from_json }}"
 
   tasks:
     - name: Install the chaincode on the peer
@@ -100,7 +101,7 @@
             CORE_TLS_CLIENT_KEY_PATH: "/hyperledger/privatekey.pem"
             CORE_TLS_CLIENT_CERT_PATH: "/hyperledger/cert.pem"
             CORE_PEER_TLS_ROOTCERT_FILE: "/hyperledger/rootcert.pem"
-            CORE_PEER_TLS_ENABLED: "false"
+            CORE_PEER_TLS_ENABLED: "true"
             CORE_CHAINCODE_LOGGING_LEVEL: "debug"
 
     - name: Create ConfigMap for TLS certs keys
@@ -110,14 +111,30 @@
           apiVersion: v1
           kind: ConfigMap
           metadata:
-            name: "{{ smart_contract_name }}.tls.v{{ smart_contract_sequence }}.conf"
+            name: "dbpeer1-{{ smart_contract_name }}.tls.v{{ smart_contract_sequence }}.conf"
             namespace: "{{ namespace }}"
             labels:
               app: "{{ smart_contract_name }}"
           data:
-            KEY: "{{ chaincode_tls.private_key | b64decode }}"
-            CERT: "{{ chaincode_tls.cert | b64decode }}"
-            ROOT_CERT: "{{ chaincode_tls.ca | b64decode }}"
+            KEY: "{{ chaincode1_tls.private_key | b64decode }}"
+            CERT: "{{ chaincode1_tls.cert | b64decode }}"
+            ROOT_CERT: "{{ chaincode1_tls.ca | b64decode }}"
+
+    - name: Create ConfigMap for TLS certs keys
+      community.kubernetes.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: "dbpeer2-{{ smart_contract_name }}.tls.v{{ smart_contract_sequence }}.conf"
+            namespace: "{{ namespace }}"
+            labels:
+              app: "{{ smart_contract_name }}"
+          data:
+            KEY: "{{ chaincode2_tls.private_key | b64decode }}"
+            CERT: "{{ chaincode2_tls.cert | b64decode }}"
+            ROOT_CERT: "{{ chaincode2_tls.ca | b64decode }}"
 
     - name: Create a Deployment for the chaincode configuration
       community.kubernetes.k8s:
@@ -134,11 +151,11 @@
             replicas: 1
             selector:
               matchLabels:
-                app: "dbpeer1-{{ smart_contract_name }}-1"
+                app: "dbpeer1-{{ smart_contract_name }}"
             template:
               metadata:
                 labels:
-                  app: "dbpeer1-{{ smart_contract_name }}-1"
+                  app: "dbpeer1-{{ smart_contract_name }}"
               spec:
                 containers:
                   - name: "{{ smart_contract_name }}-cc"
@@ -167,7 +184,7 @@
                 volumes:
                   - name: tlscreds
                     configMap:
-                      name: "{{ smart_contract_name }}.tls.v{{ smart_contract_sequence }}.conf"
+                      name: "dbpeer1-{{ smart_contract_name }}.tls.v{{ smart_contract_sequence }}.conf"
 
     - name: Create a Deployment for the chaincode configuration
       community.kubernetes.k8s:
@@ -184,11 +201,11 @@
             replicas: 1
             selector:
               matchLabels:
-                app: "dbpeer2-{{ smart_contract_name }}-1"
+                app: "dbpeer2-{{ smart_contract_name }}"
             template:
               metadata:
                 labels:
-                  app: "dbpeer2-{{ smart_contract_name }}-1"
+                  app: "dbpeer2-{{ smart_contract_name }}"
               spec:
                 containers:
                   - name: "{{ smart_contract_name }}-cc"
@@ -217,4 +234,4 @@
                 volumes:
                   - name: tlscreds
                     configMap:
-                      name: "{{ smart_contract_name }}.tls.v{{ smart_contract_sequence }}.conf"
+                      name: "dbpeer2-{{ smart_contract_name }}.tls.v{{ smart_contract_sequence }}.conf"

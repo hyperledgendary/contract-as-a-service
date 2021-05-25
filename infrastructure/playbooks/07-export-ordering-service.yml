@@ -7,7 +7,6 @@
   vars_files:
     - ../common-vars.yml
     - ../ordering-org-vars.yml
-    - ../auth-vars.yml
   tasks:
     - name: Get the ordering service
       ibm.blockchain_platform.ordering_service_info:

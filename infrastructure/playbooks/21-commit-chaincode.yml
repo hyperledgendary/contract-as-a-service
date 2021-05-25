@@ -7,7 +7,10 @@
   vars_files:
     - ../config/common-vars.yml
     - ../config/digibank-vars.yml
-    - ../config/auth-vars.yml
+  vars:
+     wallet_dir: "{{ cfg_dir }}/ibp_wallet/"
+ 
+
   tasks:
     - name: Commit the chaincode on the channel
       ibm.blockchain_platform.committed_chaincode:

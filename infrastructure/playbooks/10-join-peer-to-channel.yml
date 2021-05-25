@@ -7,7 +7,9 @@
   vars_files:
     - ../config/common-vars.yml
     - ../config/digibank-vars.yml
-    - ../config/auth-vars.yml
+  vars:
+     wallet_dir: "{{ cfg_dir }}/ibp_wallet/"
+
   tasks:
     - name: Fetch the genesis block for the channel
       ibm.blockchain_platform.channel_block:
@@ -42,7 +44,9 @@
   vars_files:
     - ../config/common-vars.yml
     - ../config/digibank-vars.yml
-    - ../config/auth-vars.yml
+  vars:
+     wallet_dir: "{{ cfg_dir }}/ibp_wallet/"
+     
   tasks:
     - name: Fetch the genesis block for the channel
       ibm.blockchain_platform.channel_block:

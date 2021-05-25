@@ -7,7 +7,7 @@
     - ../config/digibank-vars.yml
     - ../config/ibmcloud-vars.yml
     - ../config/caas-vars.yml
-    - ../config/auth-vars.yml
+
   tasks:
 
     - name: Register a new identity

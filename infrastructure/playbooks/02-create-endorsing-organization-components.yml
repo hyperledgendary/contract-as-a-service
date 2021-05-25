@@ -11,10 +11,9 @@
     ca_name: "{{ org1_ca_name }}"
     peer_name: "{{ org1_peer_name }}"
     peers: 2
-    wallet: "{{ wallet_dir }}"
+    wallet: "{{ cfg_dir }}/ibp_wallet"
   vars_files:
     - ../config/common-vars.yml
     - ../config/digibank-vars.yml
-    - ../config/auth-vars.yml
   roles:
     - ibm.blockchain_platform.endorsing_organization

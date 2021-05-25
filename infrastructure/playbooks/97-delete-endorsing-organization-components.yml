@@ -12,7 +12,7 @@
   vars_files:
     - ../config/common-vars.yml
     - ../config/digibank-vars.yml
-    - ../config/auth-vars.yml
+
   roles:
     - ibm.blockchain_platform.endorsing_organization
 
@@ -21,7 +21,7 @@
   vars_files:
     - ../config/common-vars.yml
     - ../config/digibank-vars.yml
-    - ../config/auth-vars.yml
+
   tasks:
     - name: Remove imported ordering service
       ibm.blockchain_platform.external_ordering_service:

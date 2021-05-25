@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
-- name: Join the channel
+- name: Join the channel - Peer 1
   hosts: localhost
   vars_files:
-    - ../common-vars.yml
-    - ../magnetocorp-vars.yml
-    - ../auth-vars.yml
+    - ../config/common-vars.yml
+    - ../config/magnetocorp-vars.yml
+  vars:
+     wallet_dir: "{{ cfg_dir }}/ibp_wallet/"
+
   tasks:
     - name: Fetch the genesis block for the channel
       ibm.blockchain_platform.channel_block:
@@ -32,7 +34,43 @@
         api_secret: "{{ api_secret | default(omit) }}"
         api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
         operation: join
-        peer: "{{ org2_peer_name }}"
+        peer: "{{ org2_peer_name }}1"
+        identity: "{{ wallet_dir }}/{{ org2_name }} Admin.json"
+        msp_id: "{{ org2_msp_id }}"
+        path: channel_genesis_block.bin
+
+- name: Join the channel - Peer 2
+  hosts: localhost
+  vars_files:
+    - ../config/common-vars.yml
+    - ../config/magnetocorp-vars.yml
+  vars:
+     wallet_dir: "{{ cfg_dir }}/ibp_wallet/"    
+  tasks:
+    - name: Fetch the genesis block for the channel
+      ibm.blockchain_platform.channel_block:
+        api_endpoint: "{{ api_endpoint }}"
+        api_authtype: "{{ api_authtype }}"
+        api_key: "{{ api_key }}"
+        api_secret: "{{ api_secret | default(omit) }}"
+        api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
+        operation: fetch
+        ordering_service: "{{ ordering_service_name }}"
+        identity: "{{ wallet_dir }}/{{ org2_name }} Admin.json"
+        msp_id: "{{ org2_msp_id }}"
+        name: "{{ channel_name }}"
+        target: "0"
+        path: channel_genesis_block.bin
+
+    - name: Join the peer to the channel
+      ibm.blockchain_platform.peer_channel:
+        api_endpoint: "{{ api_endpoint }}"
+        api_authtype: "{{ api_authtype }}"
+        api_key: "{{ api_key }}"
+        api_secret: "{{ api_secret | default(omit) }}"
+        api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
+        operation: join
+        peer: "{{ org2_peer_name }}2"
         identity: "{{ wallet_dir }}/{{ org2_name }} Admin.json"
         msp_id: "{{ org2_msp_id }}"
         path: channel_genesis_block.bin

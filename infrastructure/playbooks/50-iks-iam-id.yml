@@ -6,8 +6,8 @@
 # This playbook is intended to replicate the following series of commands
 #
 # ibmcloud iam service-id-create demo-caas-id --description "Service ID for IBM Cloud Container Registry in Kubernetes caasdemo"
-# ibmcloud iam service-policy-create demo-caas-id --roles Reader --service-name container-registry
-# ibmcloud iam service-api-key-create demo-caas-key demo-caas-id --description "API key for service ID caasdemo" --file key.json
+# ibmcloud iam sibmcloud iam service-api-key-create demo-caas-key demo-caas-id --description "API key for service ID caasdemo" --file key.jsonervice-policy-create demo-caas-id --roles Reader --service-name container-registry
+# 
 # DOCKER_PASSWORD=$(cat key.json | jq -r '.apikey')
 # kubectl --namespace caasdemo create secret docker-registry pullimg-secret --docker-server=stg.icr.io --docker-username=iamapikey --docker-password=${DOCKER_PASSWORD} --docker-email=barney@flintstone.co
 #
@@ -24,6 +24,13 @@
     - ../config/ibp-org1-vars.yml
     - ../config/ibmcloud-vars.yml
   tasks:
+    - name: Setup the namepsace
+      community.kubernetes.k8s:
+        name: "{{ namespace }}"
+        api_version: v1
+        kind: Namespace
+        state: present
+
     - name: Create Service ID
       ibm_iam_service_id:
         name: "{{ service_id }}"
