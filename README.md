@@ -2,7 +2,7 @@
 
 *Aim* 
 
-To show how with IBP 2.5.2, the Chaincode containers that run Smart Contracts can be run in a namespace of your own choosing in K8S. This is a new feature of IBP, and is made possible by the underlying Hyperledger Fabric Extenal Chaincode and Chaincode-as-a-server features.
+To show how with IBP 2.5.x?, the Chaincode containers that run Smart Contracts can be run in a namespace of your own choosing in K8S. This is a new feature of IBP, and is made possible by the underlying Hyperledger Fabric Extenal Chaincode and Chaincode-as-a-server features.
 
 *Objectives*
 - Setup an Ansible based environment to use for configuration
@@ -16,7 +16,7 @@ To show how with IBP 2.5.2, the Chaincode containers that run Smart Contracts ca
 
 ## Setup
 
-This tutorial will assume that you have an installed IBP, hosted within an IKS cluster. The same approach should be applicable to other K8S instances.
+This tutorial will assume that you have an installed IBP, hosted within a IKScluster. The same approach should be applicable to other K8S providers
 
 ### Suitable Python environment
 Ansible is a main feature of this setup, and as Ansible is written in Python getting a Python environment is essential.  Experience has shown getting python setup can be time consuming and awkward. The easiest way that I've found to do this succesfully - and most importantly *repeatdly succesful* is using [pipenv](https://pipenv.pypa.io/en/latest/)
@@ -51,13 +51,6 @@ ibmcloud cr login
 
 You'll be able to use the `kubectl` command now, and the K8S Ansible tasks later will also work without needing a separate API key.
 
-### Additional tools
-
-- Nodejs (version 12+). Suggested you use `nvm` for this
-- To make it easy to run the `ansible-playbook` commands, they have been put into a justfile - download [just here](https://github.com/casey/just#pre-built-binaries). Very similar syntax to make, but just files will automatically read the `.env` file for api keys, and doesn't echo these to the console. If you don't wish to use this, `cat justfile` and copy the playbook commands.
-- Docker for building the containers
-- There are a couple of NodeJS utilities needed (will install those as needed below)
-
 ### Hyperledger Fabric Peer Commands
 You'll need to have a copy of the Fabric Peer Commands. To help there's a script `getPeer.sh` that can get them for you.
 
@@ -81,6 +74,14 @@ peer:
   Docker Namespace: hyperledger
 ```
 
+
+### Additional tools
+
+- Nodejs (version 12+). Suggested you use `nvm` for this
+- To make it easy to run the `ansible-playbook` commands, they have been put into a justfile - download [just here](https://github.com/casey/just#pre-built-binaries). Very similar syntax to make, but just files will automatically read the `.env` file for api keys, and doesn't echo these to the console. If you don't wish to use this, `cat justfile` and copy the playbook commands.
+- Docker for building the containers
+- There are a couple of NodeJS utilities needed (will install those as needed below)
+  
 ### API Keys
 There are 2 API keys you need:
 
@@ -109,20 +110,21 @@ All the commands below have been put into a justfile with the following 'recipes
 ```
 just --list
 Available recipes:
-    buildcontract LANG # Currently set to push to IBM staging
-    clean              # removes the _cfg directory where wallets, connection profiles etc are stored.
-    deploycaas LANG    # Note the contract version and sequence
-    deploymanaged LANG # This the managed way of deploying chaincode
-    iamsetup           # means it's best to do this by hand with the CLI. (it's a one time setup)
-    network            # This builds the Fabric Network - Peers, CAs, Orderers and creates the admin identities
-    ping LANG          # Ping the contract working as DigiBank
-    registerapp        # This creates an application identity that can be used to interact via client applications
-    tls LANG           # For TLS, configure new Certificates approved by the Org1 CA.
+    buildcontract LANG            # Builds the docker image for the chaincode, and tags/pushes this to the Container Registry
+    clean                         # removes the _cfg directory where wallets, connection profiles etc are stored.
+    createDriver LANG             # [WIP] Stress tests
+    deploycaas LANG               # Note the contract version and sequence
+    iamsetup                      # means it's best to do this by hand with the CLI. (it's a one time setup)
+    joinnetwork                   # Add MagentoCorp to the network
+    ping LANG                     # Ping the contract working as DigiBank
+    registerapp LANG              # This creates an application identity that can be used to interact via client applications
+    startnetwork                  # This builds the Fabric Network - Peers, CAs, Orderers and creates the admin identities
+    tls LANG="node" PEER="dbpeer" # For TLS, configure new Certificates approved by the Org's CA
 ```
 ## Smart Contract
 The contract in this example is simple, but it's here just to demonstrate how it can be deployed. It's the basic getting started contract found in the Fabric Docs and the IBP VSCode exentions. The key thing is the dockerfile that is used to package up the contract, and some minor changes to the package.json
 
-NOTE: There are other languages in this repo, but to-date they are not yet tested. Only the NodeJS one is good to go.
+NOTE: There are other languages in this repo, but to-date they are not yet tested. NodeJS has been full tested, Java is good to be built as a dockerfile, but not yet tested.
 
 ### Chaincode-as-a-server
 'Normally' the Peers will start (directly or indirectly in the case of things like IBP) the chaincode processes running. In this case, when the chaincode starts it 'calls back' to the peer to 'register'.
@@ -201,7 +203,7 @@ This is a one time only setup.
 
 ## IBP Configuration
 
-We need to create the Peers/Orderers and CAs etc. As IBP Playbooks are concerned this is very standard, so I won't go into detail of how this works. It's using the same playbooks as in the Ansible Tutorial, but with a configuration to create 2 peers for the ogranization. 
+We need to create the Peers/Orderers and CAs etc. As IBP Playbooks are concerned this is very standard, so I won't go into detail of how this works. It's using the same playbooks as in the Ansible Tutorial, but with a configuration to create 2 peers for the ogranization. Organization 1 is 'DigiBank' and organization 2 is 'MagentoCorp' - this is following the Commercial Paper tutorial
 
 ```bash
 just network
@@ -236,7 +238,8 @@ We've achieved the following:
 
 Next steps are to create an indentity, and use that to submit transactions
 
-**Note sections below still need updating**
+
+
 
 ## Create identities
 
@@ -245,6 +248,12 @@ The first half of this playbook is using the IBP collection to create the identi
 (If you've not installed this already, `npm install -g @hyperledgendary/weftility`)
 
 The `_cfg` directory will be created that contains a connection profile, and a couple of wallets to use with the 'fred' identity.  
+
+## Ping test
+
+A simple 'ping' client application is included - this issues a simple transaction to get metadata from the contracts. Quick way of seeing if everything is setup. 
+
+**Note sections below still need updating and vadliating**
 
 ## Using these identities
 

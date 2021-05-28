@@ -13,7 +13,7 @@ buildcontract LANG:
 #    docker tag caasdemo-{{LANG}} stg.icr.io/ibp_caas/caasdemo-{{LANG}}:latest
 #    docker push stg.icr.io/ibp_caas/caasdemo-{{LANG}}:latest
 
-# Deploy the chaincode in it's own K8S namespace, and configure IBP to use that chaincode
+# Deploy the chaincode in it's own K8S namespace
 # Note the contract version and sequence
 deploycaas LANG:
     ansible-playbook infrastructure/playbooks/52-setup-k8s-chaincode.yml \
@@ -100,7 +100,6 @@ joinnetwork:
         --extra-vars cfg_dir=${HOME_DIR}/_cfg
 
 
-
 # Runs the setup to create an secret to use to pull the docker images for the chaincodes
 # NOTE: there is a defect currently with the Ansible IBM Cloud playbooks that
 # means it's best to do this by hand with the CLI. (it's a one time setup)
@@ -109,7 +108,7 @@ iamsetup:
         --extra-vars "@auth-vars-ibp.yml" \
         --extra-vars "@auth-vars-cloud.yml"
 
-# For TLS, configure new Certificates approved by the Org1 CA.
+# For TLS, configure new Certificates approved by the Org's CA
 tls LANG="node" PEER="dbpeer":
     ansible-playbook infrastructure/playbooks/51-k8s-cc-tls-setup.yml \
         --extra-vars wallet_dir=${HOME_DIR}/_cfg \
@@ -137,6 +136,7 @@ ping LANG:
     GATEWAY_PROFILE="${HOME_DIR}/_cfg/DigiBank Gateway.json"    \
     node client-apps/metadata/index.js
 
+# [WIP] Stress tests
 createDriver LANG:
     WALLET_DIR=${HOME_DIR}/_cfg/_wallets/DigiBank ID_NAME=ping  \
     CONTRACT=caas-cc-{{LANG}} \

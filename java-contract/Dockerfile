@@ -6,7 +6,7 @@ COPY src/ src/
 COPY build.gradle ./ 
 
 # Build and package our code
-RUN ./gradlew build shadowJar
+RUN gradle build shadowJar
 
 
 # the second stage of our build just needs the compiled files
