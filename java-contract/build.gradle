@@ -12,6 +12,9 @@ sourceCompatibility = 1.8
 
 repositories {
     maven {
+      url "$projectDir/repository"
+    }
+    maven {
         url "https://hyperledger.jfrog.io/hyperledger/fabric-maven"
     }
     mavenLocal()
@@ -19,10 +22,11 @@ repositories {
     maven {
         url 'https://jitpack.io'
     }
+    gradlePluginPortal()
 }
 
 dependencies {
-    implementation group: 'org.hyperledger.fabric-chaincode-java', name: 'fabric-chaincode-shim', version: '2.3.1.+'
+    implementation group: 'org.hyperledger.fabric-chaincode-java', name: 'fabric-chaincode-shim', version: '2.2.2'
     implementation 'com.owlike:genson:1.6'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.4.2'
     testImplementation 'org.assertj:assertj-core:3.11.1'
@@ -35,7 +39,7 @@ shadowJar {
     classifier = null
 
     manifest {
-     attributes 'Main-Class': 'org.example.Application'
+     attributes 'Main-Class': 'org.example.ContractBootstrap'
     }
 }
 

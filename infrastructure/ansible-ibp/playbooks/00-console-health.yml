@@ -1,0 +1,24 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+- name: Check the authentication to the console
+  hosts: localhost
+  vars:
+    state: present
+  vars_files:
+    - ../config/common-vars.yml
+  tasks:
+    - name: Get the ordering service information
+      ibm.blockchain_platform.ordering_service_info:
+        api_endpoint: "{{ api_endpoint }}"
+        api_authtype: "{{ api_authtype }}"
+        api_key: "{{ api_key }}"
+        api_secret: "{{ api_secret | default(omit) }}"
+        api_token_endpoint: "{{ api_token_endpoint | default(omit) }}"
+        name: "{{ ordering_service_name }}"
+      register: ordering_service
+
+    - name: output information
+      ansible.builtin.debug:
+        msg: "{{ordering_service}}"

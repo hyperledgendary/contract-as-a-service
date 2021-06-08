@@ -1,0 +1,10 @@
+{
+    "address": "{{servicename}}.{{namespace}}:9999",
+    "dial_timeout":"10s",
+    "tls_required": true,
+    "client_auth_required": true,
+    "root_cert": "{{ ca_root_cert }}",
+    "client_key": "{{ peer_key }}",
+    "client_cert": "{{ peer_cert }}",
+    "injectIdentifier":"hostname"
+}

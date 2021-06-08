@@ -1,5 +1,5 @@
   
-TARGET_IMAGE ?= "us.icr.io/ibp-cc-example2/ibp-cc-example2:latest"
+TARGET_IMAGE ?= "uk.icr.io/ibp-cc-example2/ibp-cc-example2:latest"
 
 GO_VER ?= 1.14.15
 ALPINE_VER ?= 3.12
