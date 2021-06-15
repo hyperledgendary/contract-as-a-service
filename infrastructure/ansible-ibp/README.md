@@ -1,6 +1,7 @@
 ## Setup
 
-This tutorial will assume that you have an installed IBP, hosted within a IKScluster. The same approach should be applicable to other K8S providers
+This tutorial will assume that you have an installed IBP, hosted within a IKScluster. The same approach should be applicable to other K8S providers.
+Please also make sure that you've been able to create and push at least one docker image for the Smart Contract.
 
 ### Suitable Python environment
 Ansible is a main feature of this setup, and as Ansible is written in Python getting a Python environment is essential.  Experience has shown getting python setup can be time consuming and awkward. The easiest way that I've found to do this succesfully - and most importantly *repeatdly succesful* is using [pipenv](https://pipenv.pypa.io/en/latest/)

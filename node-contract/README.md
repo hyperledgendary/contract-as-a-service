@@ -1,8 +1,6 @@
 ## Smart Contract
 The contract in this example is simple, but it's here just to demonstrate how it can be deployed. It's the basic getting started contract found in the Fabric Docs and the IBP VSCode exentions. The key thing is the dockerfile that is used to package up the contract, and some minor changes to the package.json
 
-NOTE: There are other languages in this repo, but to-date they are not yet tested. NodeJS has been full tested, Java is good to be built as a dockerfile, but not yet tested.
-
 ### Chaincode-as-a-server
 'Normally' the Peers will start (directly or indirectly in the case of things like IBP) the chaincode processes running. In this case, when the chaincode starts it 'calls back' to the peer to 'register'.
 

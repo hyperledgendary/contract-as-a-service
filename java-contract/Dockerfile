@@ -1,4 +1,4 @@
-# the first stage of our build will use a maven 3.6.1 parent 
+# the first stage 
 FROM gradle:jdk11 AS GRADLE_BUILD
  
 # copy the build.gradle and src code to the container
