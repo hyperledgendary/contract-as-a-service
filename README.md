@@ -21,7 +21,6 @@ To show with Hyperledger Fabric and the latest IBM Blockchain Platform, how the 
 **Smart Contracts**
 There are 4 implementations of the same smart contract logic, Java, Go, JavaScript, and TypeScript.
 
-- [Typescript](./typescript-contract/README.md)
 - [Javascript](./node-contract/README.md)
 - [Go](./go-contract/README.md)
 - [Java](./java-contract/README.md)
