@@ -24,6 +24,7 @@ There are 4 implementations of the same smart contract logic, Java, Go, JavaScri
 - [Javascript](./node-contract/README.md)
 - [Go](./go-contract/README.md)
 - [Java](./java-contract/README.md)
+- Typescript - still a WIP
 
 **Infrastructure Setup**
 For development purposes, using VSCode and Microfab is a great way to get started with development of the contract. This repo isn't designed to teach the details of development, but rather to show how you can work with the this type of chaincode
@@ -31,8 +32,8 @@ For development purposes, using VSCode and Microfab is a great way to get starte
 For production you can use the IBM Blockchain Platform, alternatively you can use the Hyperledger Fabric open source images.
 
 - [IBM Blockhain Platform including K8S resources](./infrastructure/ansible-ibp/README.md)
-- [Development with microfab](./infrastructure/dev-microfab/README.md)
-- [Hyperledger Fabric](./infrastructure/docker-fabric/README.md)
+- [Development with MicroFab](./infrastructure/dev-microfab/README.md)
+- [Hyperledger Fabric](./infrastructure/docker-fabric/README.md)  (still a WIP)
 
 **Client Applications**
 
@@ -44,4 +45,4 @@ For production you can use the IBM Blockchain Platform, alternatively you can us
   - [Chaincode as an external service](https://hyperledger-fabric.readthedocs.io/en/release-2.2/cc_service.html)
   - [Chaincode external builders and launchers](https://hyperledger-fabric.readthedocs.io/en/release-2.2/cc_launcher.html)
   - [CouchDB Indexes](https://hyperledger-fabric.readthedocs.io/en/release-2.2/couchdb_as_state_database.html#couchdb-indexes)
-  - 
+  
