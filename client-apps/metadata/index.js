@@ -61,7 +61,7 @@ const main = async () => {
 
     console.log(chalk.blue("Submitting ")+chalk.blue.bold("org.hyperledger.fabric:GetMetadata"));
     console.log();
-	let data = await contract.evaluateTransaction('org.hyperledger.fabric:GetMetadata');
+	let data = await contract.submitTransaction('org.hyperledger.fabric:GetMetadata');
     jsonData = JSON.parse(data.toString());
 	console.log(prettyjson.render(jsonData));
 
@@ -82,7 +82,7 @@ const main = async () => {
     // await Promise.all(promises);
     // let end = Date.now()
     // console.log(end - start);
-    gateway.disconnect();
+    await gateway.disconnect();
 
 }
 

@@ -14,7 +14,7 @@
     config_dir: "{{ home_dir }}/_cfg"
     peer_tls: "{{lookup('file','{{ config_dir }}/ibp_wallet/{{ peer_prefix }}_tls.json') | from_json }}"
     chaincode_tls: "{{lookup('file','{{ config_dir }}/ibp_wallet/{{ peer_prefix }}1-{{ smart_contract_name }}-srvc.{{ namespace }}_tls.json') | from_json }}"
- 
+    contract_dir: "{{ home_dir }}/{{ lang }}-contract"
 # using one of the chaincode_tls ca... they need to have the same
 
   tasks:
@@ -78,10 +78,21 @@
 
 
     # create the Connection.json that forms the core of the proxy contract
+    - name: Create temporary build directory
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: cc
+      register: tempdir
+  
     - name: Create connection.json
       copy:
         content: "{{ lookup('template','ibp/15-connection-tls.json.j2') }}"
-        dest: ./connection.json
+        dest: "{{tempdir.path}}/connection.json"
 
+    - name: Copy META-INF
+      copy:
+        src: "{{ contract_dir }}/META-INF"
+        dest: "{{ tempdir.path }}/META-INF"
+        
     - name: Create the archive
-      command: "{{ home_dir }}/scripts/pkgcc.sh -l {{ smart_contract_name}} -t external connection.json"
+      command: "{{ home_dir }}/scripts/pkgcc.sh -l {{ smart_contract_name}} -t external {{ tempdir.path }}"

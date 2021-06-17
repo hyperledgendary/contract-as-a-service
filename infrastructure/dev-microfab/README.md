@@ -1,3 +1,14 @@
+# Development
+
+The best way to develop the contract initially is by using VSCode and the IBP Extension. 
+
+### VSCode
+
+You can of course, use the editor you wish, but the VSCode extension makes it a lot easier. Install the extension from the [VSCode MarketPlace](https://marketplace.visualstudio.com/items?itemName=IBMBlockchain.ibm-blockchain-platform)
+
+If you've never written a Smart Contract before or never used the extension please follow the basic tutorials from the extenion's welcome screen. They are very good.
+
+##
 
 
 1. Setup the configuration for Microfab

@@ -6,7 +6,7 @@ To show with Hyperledger Fabric and the latest IBM Blockchain Platform, how the 
 
 *Main Objectives*
 
-- When using IBP
+- When using IBP in a K8S Cluster
   - Setup an Ansible based environment to use for configuration
   - Using the IBP Ansible collection, provision a basic network of Peers and Orderers
   - Provision the K8S resources needed to run the Docker image
@@ -37,3 +37,11 @@ For production you can use the IBM Blockchain Platform, alternatively you can us
 **Client Applications**
 
 - [Metadata Ping](./client-apps/metadata/README.md) Very simple 'ping' client app 
+
+## References
+
+- Hyperledger Fabric Documentation
+  - [Chaincode as an external service](https://hyperledger-fabric.readthedocs.io/en/release-2.2/cc_service.html)
+  - [Chaincode external builders and launchers](https://hyperledger-fabric.readthedocs.io/en/release-2.2/cc_launcher.html)
+  - [CouchDB Indexes](https://hyperledger-fabric.readthedocs.io/en/release-2.2/couchdb_as_state_database.html#couchdb-indexes)
+  - 

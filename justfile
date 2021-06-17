@@ -20,6 +20,7 @@ deploycaas LANG:
     ansible-playbook {{PLAYBOOK_DIR}}/52-setup-k8s-chaincode.yml \
         --extra-vars "@auth-vars-ibp.yml" \
         --extra-vars peer_prefix=dbpeer \
+        --extra-vars lang={{LANG}} \
         --extra-vars smart_contract_name=caas-cc-{{LANG}} \
         --extra-vars home_dir=${HOME_DIR}
     ansible-playbook {{PLAYBOOK_DIR}}/53-start-k8s-chaincode.yml \
@@ -29,8 +30,8 @@ deploycaas LANG:
         --extra-vars peer_prefix=dbpeer \
         --extra-vars smart_contract_package=caas-cc-{{LANG}}.tgz \
         --extra-vars smart_contract_name=caas-cc-{{LANG}} \
-        --extra-vars smart_contract_version=3 \
-        --extra-vars smart_contract_sequence=3 \
+        --extra-vars smart_contract_version=1 \
+        --extra-vars smart_contract_sequence=1 \
         --extra-vars chaincode_docker_image=uk.icr.io/ibp_caas/caasdemo-{{LANG}}:latest
 
 # This the managed way of deploying chaincode
@@ -140,6 +141,12 @@ ping LANG:
     GATEWAY_PROFILE="${HOME_DIR}/_cfg/ibp_wallet/DigiBank Gateway.json"    \
     node client-apps/metadata/index.js
 
+call CNTRCT:
+    WALLET_DIR=${HOME_DIR}/_cfg/_wallets/DigiBank ID_NAME=ping  \
+    CONTRACT={{CNTRCT}} \
+    CHANNEL=caasnetwork \
+    GATEWAY_PROFILE="${HOME_DIR}/_cfg/ibp_wallet/DigiBank Gateway.json"    \
+    node client-apps/metadata/index.js
 # [WIP] Stress tests
 createDriver LANG:
     WALLET_DIR=${HOME_DIR}/_cfg/_wallets/DigiBank ID_NAME=ping  \

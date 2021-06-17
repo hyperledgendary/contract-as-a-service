@@ -1,11 +1,11 @@
 #!/bin/bash
-
+set -x
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 function usage() {
-    echo "Usage: pkgcc.sh -l <label> -t <type> <file>"
+    echo "Usage: pkgcc.sh -l <label> -t <type> -m <META-INF directory> <file>"
 }
 
 function error_exit {
@@ -13,7 +13,7 @@ function error_exit {
     exit 1
 }
 
-while getopts "hl:t:" opt; do
+while getopts "hl:t:m:" opt; do
     case "$opt" in
         h)
             usage
@@ -24,6 +24,9 @@ while getopts "hl:t:" opt; do
             ;;
         t)
             type=${OPTARG}
+            ;;
+        m)
+            metainf=${OPTARG}
             ;;
         *)
             usage
@@ -60,6 +63,7 @@ if [ -n "$DEBUG" ]; then
     echo "type = $type"
     echo "file = $file"
     echo "tempdir = $tempdir"
+    echo "meta = $metainf"
 fi
 
 mkdir -p "$tempdir/src"
@@ -68,6 +72,12 @@ if [ -d "$file" ]; then
 elif [ -f "$file" ]; then
     cp -a "$file" "$tempdir/src/"
 fi
+
+if [[ ! -z "$metainf" ]]; then
+    cp -a "$metainf" "$tempdir/src/"
+fi
+
+# check for an copy the metainf
 
 mkdir -p "$tempdir/pkg"
 cat << METADATA-EOF > "$tempdir/pkg/metadata.json"
@@ -85,4 +95,4 @@ fi
 
 tar -C "$tempdir/pkg" -czf "$label.tgz" metadata.json code.tar.gz
 
-rm -Rf "$tempdir"
+# rm -Rf "$tempdir"
